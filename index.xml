@@ -2,30 +2,30 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Henry</title>
-    <link>http://yinheli.com/</link>
+    <link>https://yinheli.com/</link>
     <description>Recent content on Henry</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Wed, 11 Mar 2020 00:34:30 +0800</lastBuildDate>
     
-	<atom:link href="http://yinheli.com/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://yinheli.com/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>About</title>
-      <link>http://yinheli.com/about/</link>
+      <link>https://yinheli.com/about/</link>
       <pubDate>Wed, 11 Mar 2020 00:34:30 +0800</pubDate>
       
-      <guid>http://yinheli.com/about/</guid>
+      <guid>https://yinheli.com/about/</guid>
       <description>I love coding, coding makes me happy.</description>
     </item>
     
     <item>
       <title>iptables 笔记</title>
-      <link>http://yinheli.com/posts/2015/iptables-notes/</link>
+      <link>https://yinheli.com/posts/2015/iptables-notes/</link>
       <pubDate>Wed, 11 Feb 2015 00:27:56 +0800</pubDate>
       
-      <guid>http://yinheli.com/posts/2015/iptables-notes/</guid>
+      <guid>https://yinheli.com/posts/2015/iptables-notes/</guid>
       <description>&lt;p&gt;看看服务器都已经应用了哪些规则&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;iptables -L -n
 iptables -Z
@@ -86,10 +86,10 @@ iptables -A FORWARD -j REJECT --reject-with icmp-host-prohibited
     
     <item>
       <title>mysql 数据导出和导入</title>
-      <link>http://yinheli.com/posts/2015/mysql-import-export/</link>
+      <link>https://yinheli.com/posts/2015/mysql-import-export/</link>
       <pubDate>Tue, 10 Feb 2015 00:20:37 +0800</pubDate>
       
-      <guid>http://yinheli.com/posts/2015/mysql-import-export/</guid>
+      <guid>https://yinheli.com/posts/2015/mysql-import-export/</guid>
       <description>导出
 mysqldump -C -u root --opt --flush-logs --quick dbname | gzip &amp;gt; file.gz -C 使用压缩协议 -u 用户名 --opt Same as --add-drop-table, --add-locks, --create-options, 等, 其实默认是开启的 导入
 gunzip &amp;lt; file.tgz | mysql -u root -p &amp;#34;password&amp;#34; dbname 一个全量备份脚本
@@ -98,10 +98,10 @@ gunzip &amp;lt; file.tgz | mysql -u root -p &amp;#34;password&amp;#34; dbname �
     
     <item>
       <title>centos 6 安装 vmware tools 无法启动的问题</title>
-      <link>http://yinheli.com/posts/2015/install-vmware-centos6-issue/</link>
+      <link>https://yinheli.com/posts/2015/install-vmware-centos6-issue/</link>
       <pubDate>Tue, 20 Jan 2015 00:20:37 +0800</pubDate>
       
-      <guid>http://yinheli.com/posts/2015/install-vmware-centos6-issue/</guid>
+      <guid>https://yinheli.com/posts/2015/install-vmware-centos6-issue/</guid>
       <description>错误信息
 vmware-tools-thinprint start/running initctl: Job failed to start Unable to start services for VMware Tools 尝试安装 fuse-libs
 yum install fuse-libs 手工启动

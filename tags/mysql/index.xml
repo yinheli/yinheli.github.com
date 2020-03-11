@@ -2,21 +2,21 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>MySQL on Henry</title>
-    <link>http://yinheli.com/tags/mysql/</link>
+    <link>https://yinheli.com/tags/mysql/</link>
     <description>Recent content in MySQL on Henry</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Tue, 10 Feb 2015 00:20:37 +0800</lastBuildDate>
     
-	<atom:link href="http://yinheli.com/tags/mysql/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://yinheli.com/tags/mysql/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>mysql 数据导出和导入</title>
-      <link>http://yinheli.com/posts/2015/mysql-import-export/</link>
+      <link>https://yinheli.com/posts/2015/mysql-import-export/</link>
       <pubDate>Tue, 10 Feb 2015 00:20:37 +0800</pubDate>
       
-      <guid>http://yinheli.com/posts/2015/mysql-import-export/</guid>
+      <guid>https://yinheli.com/posts/2015/mysql-import-export/</guid>
       <description>导出
 mysqldump -C -u root --opt --flush-logs --quick dbname | gzip &amp;gt; file.gz -C 使用压缩协议 -u 用户名 --opt Same as --add-drop-table, --add-locks, --create-options, 等, 其实默认是开启的 导入
 gunzip &amp;lt; file.tgz | mysql -u root -p &amp;#34;password&amp;#34; dbname 一个全量备份脚本
