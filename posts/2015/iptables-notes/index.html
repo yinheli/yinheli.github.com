@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Henry">
+    <meta name="description" content="Henry&#39;s personal website">
+    <meta name="keywords" content="blog,developer,personal">
+
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="iptables 笔记"/>
+<meta name="twitter:description" content="看看服务器都已经应用了哪些规则
+iptables -L -n
+iptables -Z
+清理掉全部的规则
+iptables -F
+iptables -X
+定义自己的规则
+
+特别小心, 如果没有开放 ssh 端口就把 INPUT 的全部 DROP, shell 就掉了.
+确保有一个 ssh 22 端口是开放的.
+另一个保险是确保 iptables 不是启动运行, 这样还可以通过管理后台执行服务器重启来挽救. 否则&hellip;. 你的懂的
+
+iptables -I INPUT 1 -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+# 各个链的规则
+iptables -P INPUT DROP
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD ACCEPT
+
+# 允许 ping
+iptables -A INPUT -p icmp -j ACCEPT
+# 允许回环地址
+iptables -A INPUT -i lo -j ACCEPT
+
+# ssh 端口记录日志
+iptables -A INPUT 1 -p tcp --dport 22 -m limit --limit 3/minute --limit-burst 8 -j LOG --log-prefix ssh-burst:
+
+# 10s 内, 超过5次请求, 抛弃
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j DROP
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j LOG --log-prefix ssh-conn-max-time:
+
+iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --set
+iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j DROP
+iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j LOG --log-prefix app-conn-max-time:
+
+# 限制某些端口的最大连接数
+iptables -A INPUT -p tcp --syn --dport 22 -m connlimit --connlimit-above 5  -j DROP
+iptables -A INPUT -p tcp --syn --dport 25000 -m connlimit --connlimit-above 10 -j DROP
+
+# 开放的端口
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp --dport 25000 -j ACCEPT
+iptables -A INPUT -p tcp --dport 20000 -j ACCEPT
+iptables -A INPUT -p tcp --dport 9100 -j ACCEPT
+
+# 这条规则用在INPUT链默没有DROP的情况, 作用与-P DROP相同, 当前面所有的规则都没匹配时, 自然落到这个 REJECT 上.
+iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
+iptables -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+删除某条记录
+方法1, 把配置的那个 A 换成 D
+iptables -L -n --line-numbers 使用 --line-numbers 打印行, 然后删除行
+例如: iptables -D INPUT 2
+保存所有改动
+/etc/init.d/iptables save
+"/>
+
+    <meta property="og:title" content="iptables 笔记" />
+<meta property="og:description" content="看看服务器都已经应用了哪些规则
+iptables -L -n
+iptables -Z
+清理掉全部的规则
+iptables -F
+iptables -X
+定义自己的规则
+
+特别小心, 如果没有开放 ssh 端口就把 INPUT 的全部 DROP, shell 就掉了.
+确保有一个 ssh 22 端口是开放的.
+另一个保险是确保 iptables 不是启动运行, 这样还可以通过管理后台执行服务器重启来挽救. 否则&hellip;. 你的懂的
+
+iptables -I INPUT 1 -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+# 各个链的规则
+iptables -P INPUT DROP
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD ACCEPT
+
+# 允许 ping
+iptables -A INPUT -p icmp -j ACCEPT
+# 允许回环地址
+iptables -A INPUT -i lo -j ACCEPT
+
+# ssh 端口记录日志
+iptables -A INPUT 1 -p tcp --dport 22 -m limit --limit 3/minute --limit-burst 8 -j LOG --log-prefix ssh-burst:
+
+# 10s 内, 超过5次请求, 抛弃
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j DROP
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j LOG --log-prefix ssh-conn-max-time:
+
+iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --set
+iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j DROP
+iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j LOG --log-prefix app-conn-max-time:
+
+# 限制某些端口的最大连接数
+iptables -A INPUT -p tcp --syn --dport 22 -m connlimit --connlimit-above 5  -j DROP
+iptables -A INPUT -p tcp --syn --dport 25000 -m connlimit --connlimit-above 10 -j DROP
+
+# 开放的端口
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp --dport 25000 -j ACCEPT
+iptables -A INPUT -p tcp --dport 20000 -j ACCEPT
+iptables -A INPUT -p tcp --dport 9100 -j ACCEPT
+
+# 这条规则用在INPUT链默没有DROP的情况, 作用与-P DROP相同, 当前面所有的规则都没匹配时, 自然落到这个 REJECT 上.
+iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
+iptables -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+删除某条记录
+方法1, 把配置的那个 A 换成 D
+iptables -L -n --line-numbers 使用 --line-numbers 打印行, 然后删除行
+例如: iptables -D INPUT 2
+保存所有改动
+/etc/init.d/iptables save
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://yinheli.com/posts/2015/iptables-notes/" />
+<meta property="article:published_time" content="2015-02-11T00:27:56+08:00" />
+<meta property="article:modified_time" content="2015-02-11T00:27:56+08:00" />
+
+
+    
+      <base href="https://yinheli.com/posts/2015/iptables-notes/">
+    
+    <title>
+  iptables 笔记 · Henry
+</title>
+
+    
+      <link rel="canonical" href="https://yinheli.com/posts/2015/iptables-notes/">
+    
+
+    <link href="https://fonts.googleapis.com/css?family=Lato:400,700%7CMerriweather:300,700%7CSource+Code+Pro:400,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.11.2/css/all.css" integrity="sha384-KA6wR/X5RY4zFAHpv/CnoG2UW1uogYfdnP67Uv7eULvTveboZJg0qUpmJZb5VqzN" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha256-l85OmPOjvil/SOvVt3HnSSjzF1TUMyT9eV0c2BzEGzU=" crossorigin="anonymous" />
+
+    
+      
+      
+      <link rel="stylesheet" href="https://yinheli.com/css/coder.min.a4f332213a21ce8eb521670c614470c58923aaaf385e2a73982c31dd7642decb.css" integrity="sha256-pPMyITohzo61IWcMYURwxYkjqq84XipzmCwx3XZC3ss=" crossorigin="anonymous" media="screen" />
+    
+
+    
+
+    
+
+    
+      <link rel="stylesheet" href="https://yinheli.com/css/custom.css" />
+    
+
+    
+
+    
+
+    <link rel="icon" type="image/png" href="https://yinheli.com/img/fav.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="https://yinheli.com/img/fav@1x.png" sizes="16x16">
+
+    
+  </head>
+
+  
+  
+  <body class="colorscheme-light">
+    <main class="wrapper">
+      <nav class="navigation">
+  <section class="container">
+    <a class="navigation-title" href="https://yinheli.com/">
+      Henry
+    </a>
+    
+    <input type="checkbox" id="menu-toggle" />
+    <label class="menu-button float-right" for="menu-toggle"><i class="fas fa-bars"></i></label>
+    <ul class="navigation-list">
+      
+        
+          <li class="navigation-item">
+            <a class="navigation-link" href="https://yinheli.com/posts/">Blog</a>
+          </li>
+        
+          <li class="navigation-item">
+            <a class="navigation-link" href="https://yinheli.com/about/">About</a>
+          </li>
+        
+      
+      
+    </ul>
+    
+  </section>
+</nav>
+
+
+      <div class="content">
+        
+  <section class="container post">
+    <article>
+      <header>
+        <div class="post-title">
+          <h1 class="title">iptables 笔记</h1>
+        </div>
+        <div class="post-meta">
+          <div class="date">
+            <span class="posted-on">
+              <i class="fas fa-calendar"></i>
+              <time datetime='2015-02-11T00:27:56&#43;08:00'>
+                February 11, 2015
+              </time>
+            </span>
+            <span class="reading-time">
+              <i class="fas fa-clock"></i>
+              4-minute read
+            </span>
+          </div>
+          
+          <div class="tags">
+  <i class="fas fa-tag"></i>
+    <a href="https://yinheli.com/tags/iptables/">iptables</a></div>
+
+        </div>
+      </header>
+
+      <div>
+        
+        <p>看看服务器都已经应用了哪些规则</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-fallback" data-lang="fallback">iptables -L -n
+iptables -Z
+</code></pre></div><p>清理掉全部的规则</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-fallback" data-lang="fallback">iptables -F
+iptables -X
+</code></pre></div><p>定义自己的规则</p>
+<blockquote>
+<p>特别小心, 如果没有开放 ssh 端口就把 INPUT 的全部 DROP, shell 就掉了.
+确保有一个 ssh 22 端口是开放的.
+另一个保险是确保 iptables 不是启动运行, 这样还可以通过管理后台执行服务器重启来挽救. 否则&hellip;. 你的懂的</p>
+</blockquote>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-fallback" data-lang="fallback">iptables -I INPUT 1 -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+# 各个链的规则
+iptables -P INPUT DROP
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD ACCEPT
+
+# 允许 ping
+iptables -A INPUT -p icmp -j ACCEPT
+# 允许回环地址
+iptables -A INPUT -i lo -j ACCEPT
+
+# ssh 端口记录日志
+iptables -A INPUT 1 -p tcp --dport 22 -m limit --limit 3/minute --limit-burst 8 -j LOG --log-prefix ssh-burst:
+
+# 10s 内, 超过5次请求, 抛弃
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j DROP
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j LOG --log-prefix ssh-conn-max-time:
+
+iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --set
+iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j DROP
+iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j LOG --log-prefix app-conn-max-time:
+
+# 限制某些端口的最大连接数
+iptables -A INPUT -p tcp --syn --dport 22 -m connlimit --connlimit-above 5  -j DROP
+iptables -A INPUT -p tcp --syn --dport 25000 -m connlimit --connlimit-above 10 -j DROP
+
+# 开放的端口
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp --dport 25000 -j ACCEPT
+iptables -A INPUT -p tcp --dport 20000 -j ACCEPT
+iptables -A INPUT -p tcp --dport 9100 -j ACCEPT
+
+# 这条规则用在INPUT链默没有DROP的情况, 作用与-P DROP相同, 当前面所有的规则都没匹配时, 自然落到这个 REJECT 上.
+iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
+iptables -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+</code></pre></div><p>删除某条记录</p>
+<p>方法1, 把配置的那个 <code>A</code> 换成 <code>D</code></p>
+<p><code>iptables -L -n --line-numbers</code> 使用 <code>--line-numbers</code> 打印行, 然后删除行
+例如: <code>iptables -D INPUT 2</code></p>
+<p>保存所有改动</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-fallback" data-lang="fallback">/etc/init.d/iptables save
+</code></pre></div><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-fallback" data-lang="fallback"># 完整应用脚本, 用于快速初始化服务器 iptables
+
+iptables -L -n
+
+iptables -P INPUT ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD ACCEPT
+
+iptables -F
+iptables -X
+iptables -Z
+
+iptables -A INPUT -p icmp -j ACCEPT
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+iptables -A INPUT 1 -p tcp --dport 22 -m limit --limit 3/minute --limit-burst 8 -j LOG --log-prefix ssh-burst:
+
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j DROP
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j LOG --log-prefix ssh-conn-max-times:
+
+iptables -A INPUT -p tcp --syn --dport 22 -m connlimit --connlimit-above 30  -j DROP
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+iptables -P INPUT DROP
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD ACCEPT
+
+
+iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --set
+iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j DROP
+iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j LOG --log-prefix app-conn-max-time:
+
+iptables -A INPUT -p tcp --syn --dport 25000 -m connlimit --connlimit-above 10 -j DROP
+iptables -A INPUT -p tcp --dport 25000 -j ACCEPT
+
+iptables -A INPUT -p tcp --syn --dport 80 -m connlimit --connlimit-above 60 -j DROP
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+
+iptables -A INPUT -p tcp --syn --dport 443 -m connlimit --connlimit-above 60 -j DROP
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+
+iptables -A INPUT -p tcp --dport 20000 -j ACCEPT
+iptables -A INPUT -p tcp --dport 13307 -j ACCEPT
+
+iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
+iptables -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+
+iptables -L -n
+
+/etc/init.d/iptables save
+</code></pre></div>
+      </div>
+
+
+      <footer>
+        
+
+
+        
+        
+        
+      </footer>
+    </article>
+
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/startup.js" id="MathJax-script"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [
+          ['$', '$'], ['\\(', '\\)']
+        ],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+      }
+    };
+  </script>
+  </section>
+
+      </div>
+
+      <footer class="footer">
+  <section class="container">
+    
+    
+      
+        © 2010 - 2020
+      
+       Henry 
+    
+    
+    
+  </section>
+</footer>
+
+    </main>
+
+    
+
+    
+
+  </body>
+
+</html>

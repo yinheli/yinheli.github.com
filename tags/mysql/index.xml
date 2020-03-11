@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>MySQL on Henry</title>
+    <link>https://yinheli.com/tags/mysql/</link>
+    <description>Recent content in MySQL on Henry</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 10 Feb 2015 00:20:37 +0800</lastBuildDate>
+    
+	<atom:link href="https://yinheli.com/tags/mysql/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>mysql 数据导出和导入</title>
+      <link>https://yinheli.com/posts/2015/mysql-import-export/</link>
+      <pubDate>Tue, 10 Feb 2015 00:20:37 +0800</pubDate>
+      
+      <guid>https://yinheli.com/posts/2015/mysql-import-export/</guid>
+      <description>导出
+mysqldump -C -u root --opt --flush-logs --quick dbname | gzip &amp;gt; file.gz -C 使用压缩协议 -u 用户名 --opt Same as --add-drop-table, --add-locks, --create-options, 等, 其实默认是开启的 导入
+gunzip &amp;lt; file.tgz | mysql -u root -p &amp;#34;password&amp;#34; dbname 一个全量备份脚本
+#!/bin/sh PATH=$PATH:$HOME/bin:/home/mysql/app/mysql/bin export PATH cd `dirname $0` db=hpos dd=`date +%Y_%m%d_%H%M` sql_file=db_backup_$dd.sql.gz ig=&amp;#39;&amp;#39; # 忽略一些表 for i in table_ignore_1 table_ignore_2 do ig=$ig&amp;#39; --ignore-table=&amp;#39;$db.$i done #echo $ig mysqldump -u root --opt --flush-logs --quick $ig $db | gzip &amp;gt; $sql_file </description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,11 @@
+.content article header h1 {
+  font-size: 4.2rem;
+}
+
+.post-meta {
+  color: #787878;
+}
+
+.container {
+  max-width: 95.0rem;
+}

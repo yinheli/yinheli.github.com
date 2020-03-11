@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>iptables on Henry</title>
+    <link>https://yinheli.com/tags/iptables/</link>
+    <description>Recent content in iptables on Henry</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 11 Feb 2015 00:27:56 +0800</lastBuildDate>
+    
+	<atom:link href="https://yinheli.com/tags/iptables/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>iptables 笔记</title>
+      <link>https://yinheli.com/posts/2015/iptables-notes/</link>
+      <pubDate>Wed, 11 Feb 2015 00:27:56 +0800</pubDate>
+      
+      <guid>https://yinheli.com/posts/2015/iptables-notes/</guid>
+      <description>&lt;p&gt;看看服务器都已经应用了哪些规则&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;iptables -L -n
+iptables -Z
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;清理掉全部的规则&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;iptables -F
+iptables -X
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;定义自己的规则&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;特别小心, 如果没有开放 ssh 端口就把 INPUT 的全部 DROP, shell 就掉了.
+确保有一个 ssh 22 端口是开放的.
+另一个保险是确保 iptables 不是启动运行, 这样还可以通过管理后台执行服务器重启来挽救. 否则&amp;hellip;. 你的懂的&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;iptables -I INPUT 1 -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+# 各个链的规则
+iptables -P INPUT DROP
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD ACCEPT
+
+# 允许 ping
+iptables -A INPUT -p icmp -j ACCEPT
+# 允许回环地址
+iptables -A INPUT -i lo -j ACCEPT
+
+# ssh 端口记录日志
+iptables -A INPUT 1 -p tcp --dport 22 -m limit --limit 3/minute --limit-burst 8 -j LOG --log-prefix ssh-burst:
+
+# 10s 内, 超过5次请求, 抛弃
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j DROP
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j LOG --log-prefix ssh-conn-max-time:
+
+iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --set
+iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j DROP
+iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j LOG --log-prefix app-conn-max-time:
+
+# 限制某些端口的最大连接数
+iptables -A INPUT -p tcp --syn --dport 22 -m connlimit --connlimit-above 5  -j DROP
+iptables -A INPUT -p tcp --syn --dport 25000 -m connlimit --connlimit-above 10 -j DROP
+
+# 开放的端口
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp --dport 25000 -j ACCEPT
+iptables -A INPUT -p tcp --dport 20000 -j ACCEPT
+iptables -A INPUT -p tcp --dport 9100 -j ACCEPT
+
+# 这条规则用在INPUT链默没有DROP的情况, 作用与-P DROP相同, 当前面所有的规则都没匹配时, 自然落到这个 REJECT 上.
+iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
+iptables -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;删除某条记录&lt;/p&gt;
+&lt;p&gt;方法1, 把配置的那个 &lt;code&gt;A&lt;/code&gt; 换成 &lt;code&gt;D&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;iptables -L -n --line-numbers&lt;/code&gt; 使用 &lt;code&gt;--line-numbers&lt;/code&gt; 打印行, 然后删除行
+例如: &lt;code&gt;iptables -D INPUT 2&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;保存所有改动&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;/etc/init.d/iptables save
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

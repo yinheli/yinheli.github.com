@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Henry">
+    <meta name="description" content="Henry&#39;s personal website">
+    <meta name="keywords" content="blog,developer,personal">
+
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="mysql 数据导出和导入"/>
+<meta name="twitter:description" content="导出
+mysqldump -C -u root --opt --flush-logs --quick dbname | gzip &gt; file.gz -C 使用压缩协议 -u 用户名 --opt Same as --add-drop-table, --add-locks, --create-options, 等, 其实默认是开启的 导入
+gunzip &lt; file.tgz | mysql -u root -p &#34;password&#34; dbname 一个全量备份脚本
+#!/bin/sh PATH=$PATH:$HOME/bin:/home/mysql/app/mysql/bin export PATH cd `dirname $0` db=hpos dd=`date &#43;%Y_%m%d_%H%M` sql_file=db_backup_$dd.sql.gz ig=&#39;&#39; # 忽略一些表 for i in table_ignore_1 table_ignore_2 do ig=$ig&#39; --ignore-table=&#39;$db.$i done #echo $ig mysqldump -u root --opt --flush-logs --quick $ig $db | gzip &gt; $sql_file "/>
+
+    <meta property="og:title" content="mysql 数据导出和导入" />
+<meta property="og:description" content="导出
+mysqldump -C -u root --opt --flush-logs --quick dbname | gzip &gt; file.gz -C 使用压缩协议 -u 用户名 --opt Same as --add-drop-table, --add-locks, --create-options, 等, 其实默认是开启的 导入
+gunzip &lt; file.tgz | mysql -u root -p &#34;password&#34; dbname 一个全量备份脚本
+#!/bin/sh PATH=$PATH:$HOME/bin:/home/mysql/app/mysql/bin export PATH cd `dirname $0` db=hpos dd=`date &#43;%Y_%m%d_%H%M` sql_file=db_backup_$dd.sql.gz ig=&#39;&#39; # 忽略一些表 for i in table_ignore_1 table_ignore_2 do ig=$ig&#39; --ignore-table=&#39;$db.$i done #echo $ig mysqldump -u root --opt --flush-logs --quick $ig $db | gzip &gt; $sql_file " />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://yinheli.com/posts/2015/mysql-import-export/" />
+<meta property="article:published_time" content="2015-02-10T00:20:37+08:00" />
+<meta property="article:modified_time" content="2015-02-10T00:20:37+08:00" />
+
+
+    
+      <base href="https://yinheli.com/posts/2015/mysql-import-export/">
+    
+    <title>
+  mysql 数据导出和导入 · Henry
+</title>
+
+    
+      <link rel="canonical" href="https://yinheli.com/posts/2015/mysql-import-export/">
+    
+
+    <link href="https://fonts.googleapis.com/css?family=Lato:400,700%7CMerriweather:300,700%7CSource+Code+Pro:400,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.11.2/css/all.css" integrity="sha384-KA6wR/X5RY4zFAHpv/CnoG2UW1uogYfdnP67Uv7eULvTveboZJg0qUpmJZb5VqzN" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha256-l85OmPOjvil/SOvVt3HnSSjzF1TUMyT9eV0c2BzEGzU=" crossorigin="anonymous" />
+
+    
+      
+      
+      <link rel="stylesheet" href="https://yinheli.com/css/coder.min.a4f332213a21ce8eb521670c614470c58923aaaf385e2a73982c31dd7642decb.css" integrity="sha256-pPMyITohzo61IWcMYURwxYkjqq84XipzmCwx3XZC3ss=" crossorigin="anonymous" media="screen" />
+    
+
+    
+
+    
+
+    
+      <link rel="stylesheet" href="https://yinheli.com/css/custom.css" />
+    
+
+    
+
+    
+
+    <link rel="icon" type="image/png" href="https://yinheli.com/img/fav.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="https://yinheli.com/img/fav@1x.png" sizes="16x16">
+
+    
+  </head>
+
+  
+  
+  <body class="colorscheme-light">
+    <main class="wrapper">
+      <nav class="navigation">
+  <section class="container">
+    <a class="navigation-title" href="https://yinheli.com/">
+      Henry
+    </a>
+    
+    <input type="checkbox" id="menu-toggle" />
+    <label class="menu-button float-right" for="menu-toggle"><i class="fas fa-bars"></i></label>
+    <ul class="navigation-list">
+      
+        
+          <li class="navigation-item">
+            <a class="navigation-link" href="https://yinheli.com/posts/">Blog</a>
+          </li>
+        
+          <li class="navigation-item">
+            <a class="navigation-link" href="https://yinheli.com/about/">About</a>
+          </li>
+        
+      
+      
+    </ul>
+    
+  </section>
+</nav>
+
+
+      <div class="content">
+        
+  <section class="container post">
+    <article>
+      <header>
+        <div class="post-title">
+          <h1 class="title">mysql 数据导出和导入</h1>
+        </div>
+        <div class="post-meta">
+          <div class="date">
+            <span class="posted-on">
+              <i class="fas fa-calendar"></i>
+              <time datetime='2015-02-10T00:20:37&#43;08:00'>
+                February 10, 2015
+              </time>
+            </span>
+            <span class="reading-time">
+              <i class="fas fa-clock"></i>
+              1-minute read
+            </span>
+          </div>
+          
+          <div class="tags">
+  <i class="fas fa-tag"></i>
+    <a href="https://yinheli.com/tags/mysql/">MySQL</a></div>
+
+        </div>
+      </header>
+
+      <div>
+        
+        <p>导出</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">mysqldump -C -u root --opt --flush-logs --quick  dbname | gzip &gt; file.gz
+</code></pre></div><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-fallback" data-lang="fallback">-C 使用压缩协议
+-u 用户名
+--opt Same as --add-drop-table, --add-locks, --create-options, 等, 其实默认是开启的
+</code></pre></div><p>导入</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gunzip &lt;  file.tgz | mysql -u root -p <span style="font-style:italic">&#34;password&#34;</span> dbname
+</code></pre></div><p>一个全量备份脚本</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="">#!/bin/sh
+</span><span style=""></span>PATH=$PATH:$HOME/bin:/home/mysql/app/mysql/bin
+export PATH
+cd <span style="font-style:italic">`</span>dirname $0<span style="font-style:italic">`</span>
+db=hpos
+dd=<span style="font-style:italic">`</span>date +%Y_%m%d_%H%M<span style="font-style:italic">`</span>
+sql_file=db_backup_$dd.sql.gz
+ig=<span style="font-style:italic">&#39;&#39;</span>
+
+<span style="font-style:italic"># 忽略一些表</span>
+<span style="font-weight:bold">for</span> i in table_ignore_1 table_ignore_2
+<span style="font-weight:bold">do</span>
+   ig=$ig<span style="font-style:italic">&#39; --ignore-table=&#39;</span>$db.$i
+<span style="font-weight:bold">done</span>
+
+<span style="font-style:italic">#echo $ig</span>
+mysqldump -u root --opt --flush-logs --quick $ig $db | gzip &gt; $sql_file
+</code></pre></div>
+      </div>
+
+
+      <footer>
+        
+
+
+        
+        
+        
+      </footer>
+    </article>
+
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/startup.js" id="MathJax-script"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [
+          ['$', '$'], ['\\(', '\\)']
+        ],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+      }
+    };
+  </script>
+  </section>
+
+      </div>
+
+      <footer class="footer">
+  <section class="container">
+    
+    
+      
+        © 2010 - 2020
+      
+       Henry 
+    
+    
+    
+  </section>
+</footer>
+
+    </main>
+
+    
+
+    
+
+  </body>
+
+</html>
