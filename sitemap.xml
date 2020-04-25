@@ -13,17 +13,37 @@
   </url>
   
   <url>
-    <loc>https://yinheli.com/posts/</loc>
-    <lastmod>2017-09-06T00:40:00+08:00</lastmod>
+    <loc>https://yinheli.com/tags/golang/</loc>
+    <lastmod>2018-05-17T21:30:00+08:00</lastmod>
   </url>
   
   <url>
-    <loc>https://yinheli.com/tags/raspberry/</loc>
-    <lastmod>2017-09-06T00:40:00+08:00</lastmod>
+    <loc>https://yinheli.com/tags/gorm/</loc>
+    <lastmod>2018-05-17T21:30:00+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yinheli.com/posts/2018/gorm-custom-type/</loc>
+    <lastmod>2018-05-17T21:30:00+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yinheli.com/tags/orm/</loc>
+    <lastmod>2018-05-17T21:30:00+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yinheli.com/posts/</loc>
+    <lastmod>2018-05-17T21:30:00+08:00</lastmod>
   </url>
   
   <url>
     <loc>https://yinheli.com/tags/</loc>
+    <lastmod>2018-05-17T21:30:00+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yinheli.com/tags/raspberry/</loc>
     <lastmod>2017-09-06T00:40:00+08:00</lastmod>
   </url>
   

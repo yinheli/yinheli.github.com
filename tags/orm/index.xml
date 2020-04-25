@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>orm on Henry</title>
+    <link>https://yinheli.com/tags/orm/</link>
+    <description>Recent content in orm on Henry</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 17 May 2018 21:30:00 +0800</lastBuildDate>
+    
+	<atom:link href="https://yinheli.com/tags/orm/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>GORM 自定义数据类型的处理</title>
+      <link>https://yinheli.com/posts/2018/gorm-custom-type/</link>
+      <pubDate>Thu, 17 May 2018 21:30:00 +0800</pubDate>
+      
+      <guid>https://yinheli.com/posts/2018/gorm-custom-type/</guid>
+      <description>如果有自定的数据类型，关键是实现 sql 的序列和反序列化方法，即: driver.Valuer sql.Scanner 接口。
+例如有如下数据结构
+type StringArray []string type RecArticle struct { Id uint64 `gorm:&amp;#34;column:id&amp;#34; json:&amp;#34;Id,string&amp;#34;` Tags StringArray `gorm:&amp;#34;column:tags&amp;#34; json:&amp;#34;tags&amp;#34;` Cates StringArray `gorm:&amp;#34;column:cates&amp;#34; json:&amp;#34;cates&amp;#34;` } 实现上面的接口
+func (t StringArray) Value() (driver.Value, error) { b, _ := json.Marshal(t) return string(b), nil } func (t *StringArray) Scan(src interface{}) error { if src != nil { var v []string json.Unmarshal(src.([]byte), &amp;amp;v) *t = v } return nil } 如果对时间戳，json 都需要特定的处理
+add callbacks</description>
+    </item>
+    
+  </channel>
+</rss>
