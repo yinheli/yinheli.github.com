@@ -139,8 +139,8 @@ add callbacks" />
 <div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="font-weight:bold">type</span> StringArray []<span style="">string</span>
 
 <span style="font-weight:bold">type</span> RecArticle <span style="font-weight:bold">struct</span> {
-  Id     <span style="">uint64</span> <span style="font-style:italic">`gorm:&#34;column:id&#34; json:&#34;Id,string&#34;`</span>
-  Tags   StringArray  <span style="font-style:italic">`gorm:&#34;column:tags&#34; json:&#34;tags&#34;`</span>
+	Id     <span style="">uint64</span> <span style="font-style:italic">`gorm:&#34;column:id&#34; json:&#34;Id,string&#34;`</span>
+	Tags   StringArray  <span style="font-style:italic">`gorm:&#34;column:tags&#34; json:&#34;tags&#34;`</span>
 	Cates  StringArray  <span style="font-style:italic">`gorm:&#34;column:cates&#34; json:&#34;cates&#34;`</span>
 }
 </code></pre></div><p>实现上面的接口</p>
