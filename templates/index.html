@@ -1,0 +1,8 @@
+{% extends "hook/templates/index.html" %}
+
+{% block extra_head -%}
+    <link rel="stylesheet" href="{{ get_url(path='style.css', cachebust=true) }}" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+{%- endblock extra_head %}
