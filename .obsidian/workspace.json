@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "content/blog/2023/aliyun-k8s-reduce-costs.md",
+                "file": "content/blog/2023/hello-world-hello-rust.md",
                 "mode": "source",
                 "source": false
               }
@@ -86,7 +86,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "content/blog/2023/aliyun-k8s-reduce-costs.md",
+                "file": "content/blog/2023/hello-world-hello-rust.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -103,7 +103,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "content/blog/2023/aliyun-k8s-reduce-costs.md",
+                "file": "content/blog/2023/hello-world-hello-rust.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -126,7 +126,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "content/blog/2023/aliyun-k8s-reduce-costs.md"
+                "file": "content/blog/2023/hello-world-hello-rust.md"
               }
             }
           }
@@ -149,15 +149,15 @@
   },
   "active": "1be5175a79d3e741",
   "lastOpenFiles": [
+    "content/blog/2023/aliyun-k8s-reduce-costs.md",
+    "content/blog/2023/hello-world-hello-rust.md",
     "Untitled.md",
     "hello world.md",
     "content/blog/2023/Untitled.md",
-    "content/blog/2023/aliyun-k8s-reduce-costs.md",
     "content/index.md",
     "themes/hook/content/about.md",
     "themes/hook/content/_index.md",
     "content/blog/_index.md",
-    "themes/hook/content/blog/_index.md",
-    "themes/hook/content/blog/hello-world.md"
+    "themes/hook/content/blog/_index.md"
   ]
 }
