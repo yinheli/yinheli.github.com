@@ -21,8 +21,8 @@
       "Force key values to be multi-line arrays": ""
     },
     "Insert YAML attributes": {
-      "Inserts the given YAML attributes into the YAML frontmatter. Put each attribute on a single line.": true,
-      "Text to insert": "title:\ndate:\naliases: \ntags: "
+      "Inserts the given YAML attributes into the YAML frontmatter. Put each attribute on a single line.": false,
+      "Text to insert": "title:\ndate:\ntags: "
     },
     "Move Tags to Yaml": {
       "Move all tags to Yaml frontmatter of the document.": false,

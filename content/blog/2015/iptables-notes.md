@@ -1,8 +1,9 @@
 ---
 draft: false
 date: 2015-02-11
-title: "iptables 笔记"
-tags: ["iptables"]
+title: iptables 笔记
+tags: 
+  - iptables
 ---
 
 看看服务器都已经应用了哪些规则

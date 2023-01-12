@@ -1,4 +1,5 @@
 ---
+tags: rust
 title: hello world, hello rust
 date: 2023-01-11
 ---

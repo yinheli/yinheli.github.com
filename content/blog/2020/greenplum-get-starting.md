@@ -1,9 +1,11 @@
 ---
 draft: true
 date: 2020-03-11
-title: "Greenplum 入门"
-description: "Greenplum 安装及基本概念入门"
-tags: ["bigdata", "Greenplum"]
+title: Greenplum 入门
+description: Greenplum 安装及基本概念入门
+tags: 
+  - bigdata
+  - Greenplum
 ---
 
 Greenplum 数据库是 shared nothing 的分析型 MPP 数据库。近期由于老婆的项目组在使用，我也顺便了解学习下。记录下主要的流程步骤备忘。
