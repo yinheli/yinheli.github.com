@@ -1,0 +1,27 @@
+{% extends "hook/templates/page.html" %}
+
+{% block content %}
+<main>
+    <h1>{{ page.title }}</h1>
+    {% if page.date %}
+    <p class="secondary">{{ page.date | date(format="%-d %B, %Y") }}</p>
+    {% endif %}
+    <div class="space"></div>
+    {{ page.content | safe }}
+    {%- if config.extra.github_comments %}
+    <div id="gitalk-container"></div>
+    <script>
+      const gitalk = new Gitalk({
+        clientID: 'f82a0034c1f959fb2bb2',
+        clientSecret: '302944c3206f9df9213356a02e4511a7fa13bcbb',
+        repo: 'yinheli.github.com',
+        owner: 'yinheli',
+        admin: ['yinheli'],
+        id: location.pathname,
+        distractionFreeMode: false
+      })
+      gitalk.render('gitalk-container')
+    </script>
+    {%- endif %}
+</main>
+{% endblock content %}

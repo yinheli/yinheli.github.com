@@ -26,7 +26,7 @@
               "type": "markdown",
               "state": {
                 "file": "content/blog/2023/aliyun-k8s-ingress-xff-issue.md",
-                "mode": "preview",
+                "mode": "source",
                 "source": false
               }
             }
@@ -163,9 +163,9 @@
   },
   "active": "fa5cd81806387752",
   "lastOpenFiles": [
+    "content/blog/2023/hello-world-hello-rust.md",
     "content/blog/2023/aliyun-k8s-reduce-costs.md",
     "content/blog/2023/aliyun-k8s-ingress-xff-issue.md",
-    "content/blog/2023/hello-world-hello-rust.md",
     "content/blog/2015/mysql-import-export.md",
     "README.md",
     "themes/hook/screenshot.png",

@@ -16,9 +16,9 @@ allow-backend-server-header: "true"
 enable-underscores-in-headers: "true"
 ```
 
-默认的 ingress 对应的负载均衡器为安装时的固定规格，也可以参考 Annotation 配置，调整 nginx-lb 的 service，调整规格，计划方案，如 LCU 计费或包年包月计划等，如果波峰比较大，个人比较推荐 LCU 的计费模式，省钱的同时也能应对突增流量。
+默认的 ingress 对应的负载均衡器为安装时的固定规格，也可以参考 Annotation 配置，调整 nginx-lb 的 service，[调整规格](@/blog/2023/aliyun-k8s-reduce-costs.md)，计划方案，如 LCU 计费或包年包月计划等，如果波峰比较大，个人比较推荐 LCU 的计费模式，省钱的同时也能应对突增流量。
 
 ## 相关资料
-- https://github.com/kubernetes/ingress-nginx
-- https://kubernetes.github.io/ingress-nginx/
-- https://help.aliyun.com/document_detail/86531.html
+- [https://github.com/kubernetes/ingress-nginx](https://github.com/kubernetes/ingress-nginx)
+- [https://kubernetes.github.io/ingress-nginx/](https://kubernetes.github.io/ingress-nginx/)
+- [https://help.aliyun.com/document_detail/86531.html](https://help.aliyun.com/document_detail/86531.html)
