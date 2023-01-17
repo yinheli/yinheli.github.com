@@ -12,10 +12,10 @@
       "Remove Hashtags from tags in the YAML frontmatter, as they make the tags there invalid.": false
     },
     "Format Yaml Array": {
-      "Allows for the formatting of regular yaml arrays as either multi-line or single-line and `tags` and `aliases` are allowed to have some Obsidian specific yaml formats. Note that single string to single-line goes from a single string entry to a single-line array if more than 1 entry is present. The same is true for single string to multi-line except it becomes a multi-line array.": false,
+      "Allows for the formatting of regular yaml arrays as either multi-line or single-line and `tags` and `aliases` are allowed to have some Obsidian specific yaml formats. Note that single string to single-line goes from a single string entry to a single-line array if more than 1 entry is present. The same is true for single string to multi-line except it becomes a multi-line array.": true,
       "Format yaml aliases section": true,
       "Format yaml tags section": true,
-      "Default yaml array section style": "single-line",
+      "Default yaml array section style": "multi-line",
       "Format yaml array sections": true,
       "Force key values to be single-line arrays": "",
       "Force key values to be multi-line arrays": ""

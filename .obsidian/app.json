@@ -3,5 +3,8 @@
   "strictLineBreaks": false,
   "promptDelete": true,
   "useTab": false,
-  "tabSize": 2
+  "tabSize": 2,
+  "showInlineTitle": true,
+  "readableLineLength": true,
+  "showFrontmatter": true
 }

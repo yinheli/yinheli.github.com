@@ -1,8 +1,6 @@
 ---
 title: 阿里云 k8s 节约成本记录
-tags: 
-  - k8s
-  - aliyun
+tags: [k8s, aliyun]
 date: 2023-01-11
 ---
 
