@@ -5,10 +5,17 @@
     <link rel="apple-touch-icon" href="/img/fav.png" />
     <link rel="icon" type="image/png" href="/img/fav@1x.png" />
     <link rel="shortcut icon" href="/img/fav.png" />
+    {#
     {%- if config.extra.github_comments %}
     <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
     <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
     {%- endif %}
+    #}
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
     <script>
       window.dataLayer = window.dataLayer || [];

@@ -31,4 +31,4 @@ links = [
   # { title = "About", href = "/about" },
 ]
 
-github_comments = false
+github_comments = true
