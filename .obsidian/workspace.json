@@ -13,8 +13,8 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "content/_index.md",
-                "mode": "preview",
+                "file": "content/blog/2023/pytorch-mirror.md",
+                "mode": "source",
                 "source": false
               }
             }
@@ -76,6 +76,14 @@
                 "useHierarchy": true
               }
             }
+          },
+          {
+            "id": "0e4bd0a54df8d77e",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
           }
         ]
       }
@@ -97,7 +105,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "content/_index.md",
+                "file": "content/blog/2023/pytorch-mirror.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -114,7 +122,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "content/_index.md",
+                "file": "content/blog/2023/pytorch-mirror.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -126,7 +134,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "content/_index.md"
+                "file": "content/blog/2023/pytorch-mirror.md"
               }
             }
           }
@@ -148,17 +156,19 @@
       "markdown-importer:Open format converter": false
     }
   },
-  "active": "fa5cd81806387752",
+  "active": "4ddf393f4dd26d83",
   "lastOpenFiles": [
+    "content/blog/2023/aliyun-k8s-ingress-xff-issue.md",
+    "content/blog/2023/pytorch-mirror.md",
+    "content/blog/2023/nginx-url-decode-issue.md",
+    "content/blog/2023/_index.md",
+    "README.md",
+    "content/_index.md",
     "content/blog/_index.md",
     "content/blog/2023/k8s-node-shell.md",
     "content/blog/2023/kaniko-build-cli.md",
-    "content/blog/2023/nginx-url-decode-issue.md",
     "content/blog/2023/hello-world-hello-rust.md",
     "content/blog/2023/aliyun-k8s-reduce-costs.md",
-    "content/blog/2023/aliyun-k8s-ingress-xff-issue.md",
-    "content/blog/2023/_index.md",
-    "content/blog/2015/mysql-import-export.md",
-    "README.md"
+    "content/blog/2015/mysql-import-export.md"
   ]
 }
