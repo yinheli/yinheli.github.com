@@ -29,7 +29,7 @@ username = user
 password = pass
 ```
 
-3. 按照好 `twine` ，挨个包执行上传/发布
+3. 安装好 `twine` ，挨个包执行上传/发布
 
 ```bash
 twine upload --repository nexus-torch-cu118 torch-2.0.0+cu118-cp39-cp39-linux_x86_64.whl
