@@ -1,6 +1,10 @@
 ---
-tags: [k8s, shell, kubectl, plugin]
 title: kubernetes node shell plugin
+tags:
+  - k8s
+  - shell
+  - kubectl
+  - plugin
 date: 2023-01-29
 ---
 

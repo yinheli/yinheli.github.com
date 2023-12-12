@@ -1,9 +1,10 @@
 ---
-draft: false
+title: centos 6 安装 vmware tools 无法启动的问题
+description: centos 6 安装 vmware tools 无法启动的问题
+tags:
+  - centos
 date: 2015-01-20
-title: "centos 6 安装 vmware tools 无法启动的问题"
-description: ""
-tags: ["centos"]
+draft: false
 ---
 
 错误信息

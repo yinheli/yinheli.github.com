@@ -1,9 +1,10 @@
 ---
-draft: false
+title: 远程初始化树莓派
+description: 通过远程 WiFi 方式初始化树莓派
 date: 2017-09-06
-title: "远程初始化树莓派"
-description: "通过远程 WiFi 方式初始化树莓派"
-tags: ["Raspberry"]
+tags:
+  - Raspberry
+draft: false
 ---
 
 没有键盘，显示器，只有 wifi 网络的情况下，启用 树莓派, 官方下载树莓派镜像，使用 Etcher 刷入 sd 卡

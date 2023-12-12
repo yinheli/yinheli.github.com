@@ -1,8 +1,9 @@
 ---
-draft: false
+title: mysql 数据导出和导入
 date: 2015-02-10
-title: "mysql 数据导出和导入"
-tags: ["MySQL"]
+tags:
+  - MySQL
+draft: false
 ---
 
 导出

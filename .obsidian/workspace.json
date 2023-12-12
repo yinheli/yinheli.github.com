@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "content/blog/2023/pytorch-mirror.md",
+                "file": "content/blog/2023/loki-local.md",
                 "mode": "source",
                 "source": false
               }
@@ -21,6 +21,24 @@
           }
         ],
         "stacked": true
+      },
+      {
+        "id": "45bc698a7d8896d7",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4184480510137b54",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "content/blog/2023/learn-stable-diffusion.md",
+                "mode": "preview",
+                "source": false
+              }
+            }
+          }
+        ]
       }
     ],
     "direction": "vertical"
@@ -105,7 +123,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "content/blog/2023/pytorch-mirror.md",
+                "file": "content/blog/2023/loki-local.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -122,7 +140,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "content/blog/2023/pytorch-mirror.md",
+                "file": "content/blog/2023/loki-local.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -134,7 +152,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "content/blog/2023/pytorch-mirror.md"
+                "file": "content/blog/2023/loki-local.md"
               }
             }
           }
@@ -156,19 +174,27 @@
       "markdown-importer:Open format converter": false
     }
   },
-  "active": "4ddf393f4dd26d83",
+  "active": "fa5cd81806387752",
   "lastOpenFiles": [
-    "content/blog/2023/aliyun-k8s-ingress-xff-issue.md",
-    "content/blog/2023/pytorch-mirror.md",
+    "content/blog/2023/learn-stable-diffusion.md",
     "content/blog/2023/nginx-url-decode-issue.md",
-    "content/blog/2023/_index.md",
-    "README.md",
+    "content/blog/2023/loki-local.md",
+    "content/blog/2023/pytorch-mirror.md",
     "content/_index.md",
     "content/blog/_index.md",
-    "content/blog/2023/k8s-node-shell.md",
+    "content/blog/2023/_index.md",
     "content/blog/2023/kaniko-build-cli.md",
+    "content/blog/2023/k8s-node-shell.md",
     "content/blog/2023/hello-world-hello-rust.md",
     "content/blog/2023/aliyun-k8s-reduce-costs.md",
-    "content/blog/2015/mysql-import-export.md"
+    "content/blog/2023/aliyun-k8s-ingress-xff-issue.md",
+    "content/blog/2020/greenplum-get-starting.md",
+    "content/blog/2018/gorm-custom-type.md",
+    "content/blog/2015/install-vmware-centos6-issue.md",
+    "content/blog/2015/iptables-notes.md",
+    "content/blog/2015/mysql-import-export.md",
+    "content/blog/2017/raspberry-install-without-keyboard.md",
+    "content/blog/2017/_index.md",
+    "README.md"
   ]
 }

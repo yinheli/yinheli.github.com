@@ -1,8 +1,12 @@
 ---
+title: GORM 自定义数据类型的处理
+description: GORM 自定义数据类型
 draft: false
 date: 2018-05-17
-title: "GORM 自定义数据类型的处理"
-tags: ["golang", "orm", "gorm"]
+tags:
+  - golang
+  - orm
+  - gorm
 ---
 
 如果有自定的数据类型，关键是实现 sql 的序列和反序列化方法，即: `driver.Valuer` `sql.Scanner` 接口。

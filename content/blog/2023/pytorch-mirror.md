@@ -1,10 +1,12 @@
 ---
 title: pytorch 镜像
-tags: [pytorch, nexus]
+tags:
+  - pytorch
+  - nexus
 date: 2023-08-08
 ---
 
-pytorch 貌似并未提供官方的 pypi 仓库，仅有一个 wheels 下载站 https://download.pytorch.org/whl ,当然 pip 是可以识别 `find-links` 类型的，但是在国内的网络环境下，下载却非常慢，尝试用上海交大的镜像，能临时解决问题，不过我们要在项目中构建 Docker 镜像，还是用免费的 nexus 私服构建代理比较合适。
+pytorch 仅有一个 wheels 下载站 https://download.pytorch.org/whl ,当然 pip 是可以识别 `find-links` 类型的，但是在国内的网络环境下，下载却非常慢，尝试用上海交大的镜像，能临时解决问题，不过我们要在项目中构建 Docker 镜像，还是用免费的 nexus 私服构建代理比较合适。
 
 而 nexus 私服的 pypi 只支持代理 pypi 的上游，不支持 `find-links` 规范，故曲线救国，先手动把 whl 包下载下来，再用 `twine` 上传/发布到私服。
 
@@ -24,7 +26,7 @@ index-servers =
     nexus-torch-cu118
 
 [nexus-torch-cu118]
-repository = https://nexus-server/repository/pytouch-cu118/
+repository = https://nexus-server/repository/pytorch-cu118/
 username = user
 password = pass
 ```
@@ -36,5 +38,4 @@ twine upload --repository nexus-torch-cu118 torch-2.0.0+cu118-cp39-cp39-linux_x8
 ```
 
 4. 记得在 pypi group 里加上发布的那个 self-host 仓库
-
 
