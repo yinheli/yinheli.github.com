@@ -45,3 +45,6 @@ The source cluster was not shut down cleanly
 /bitnami/postgresql/oldbin/pg_ctl stop -s -m fast -D /bitnami/postgresql/olddata
 ```
 
+## 参考资料
+
+- https://github.com/bitnami/charts/issues/8025
