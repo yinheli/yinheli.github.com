@@ -4,25 +4,6 @@
     "type": "split",
     "children": [
       {
-        "id": "4aa5e939f391ce40",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "fa5cd81806387752",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "content/blog/2023/loki-local.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          }
-        ],
-        "stacked": true
-      },
-      {
         "id": "45bc698a7d8896d7",
         "type": "tabs",
         "children": [
@@ -32,8 +13,8 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "content/blog/2023/learn-stable-diffusion.md",
-                "mode": "preview",
+                "file": "content/blog/2023/postgresql-upgrade.md",
+                "mode": "source",
                 "source": false
               }
             }
@@ -123,7 +104,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "content/blog/2023/loki-local.md",
+                "file": "content/blog/2023/postgresql-upgrade.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -140,7 +121,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "content/blog/2023/loki-local.md",
+                "file": "content/blog/2023/postgresql-upgrade.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -152,7 +133,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "content/blog/2023/loki-local.md"
+                "file": "content/blog/2023/postgresql-upgrade.md"
               }
             }
           }
@@ -174,11 +155,12 @@
       "markdown-importer:Open format converter": false
     }
   },
-  "active": "fa5cd81806387752",
+  "active": "4184480510137b54",
   "lastOpenFiles": [
+    "content/blog/2023/loki-local.md",
+    "content/blog/2023/postgresql-upgrade.md",
     "content/blog/2023/learn-stable-diffusion.md",
     "content/blog/2023/nginx-url-decode-issue.md",
-    "content/blog/2023/loki-local.md",
     "content/blog/2023/pytorch-mirror.md",
     "content/_index.md",
     "content/blog/_index.md",
