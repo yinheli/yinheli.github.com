@@ -4,19 +4,15 @@
     "type": "split",
     "children": [
       {
-        "id": "45bc698a7d8896d7",
+        "id": "f67cb7fc92606e24",
         "type": "tabs",
         "children": [
           {
-            "id": "4184480510137b54",
+            "id": "c06747e7761b6ffb",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "content/blog/2023/postgresql-upgrade.md",
-                "mode": "source",
-                "source": false
-              }
+              "type": "empty",
+              "state": {}
             }
           }
         ]
@@ -104,7 +100,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "content/blog/2023/postgresql-upgrade.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -121,7 +116,6 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "content/blog/2023/postgresql-upgrade.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -132,9 +126,7 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {
-                "file": "content/blog/2023/postgresql-upgrade.md"
-              }
+              "state": {}
             }
           }
         ],
@@ -155,8 +147,9 @@
       "markdown-importer:Open format converter": false
     }
   },
-  "active": "4184480510137b54",
+  "active": "c06747e7761b6ffb",
   "lastOpenFiles": [
+    "content/blog/2023/postgresql-upgrade.md",
     "public/img/fav@1x.png",
     "public/img/fav.png",
     "public/style.css",
@@ -169,7 +162,6 @@
     "public/CNAME",
     "public",
     "content/blog/2023/loki-local.md",
-    "content/blog/2023/postgresql-upgrade.md",
     "content/blog/2023/learn-stable-diffusion.md",
     "content/blog/2023/nginx-url-decode-issue.md",
     "content/blog/2023/pytorch-mirror.md",
