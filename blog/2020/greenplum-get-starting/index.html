@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Greenplum 安装及基本概念入门">
+    <title>Henry | Greenplum 入门</title>
+    <link rel="stylesheet" href="https://yinheli.com/style.css?h=5c5abba3a670f76f59be" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+    
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-5647601-2');
+    </script>
+    
+    
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://yinheli.com/atom.xml">
+    
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;yinheli.com">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>Greenplum 入门</h1>
+    
+    <p class="secondary">11 March, 2020</p>
+    
+    <div class="space"></div>
+    <p>Greenplum 数据库是 shared nothing 的分析型 MPP 数据库。近期由于老婆的项目组在使用，我也顺便了解学习下。记录下主要的流程步骤备忘。</p>
+<p>如果你参考我的文档，需要对 Greenplum 的架构有个大概的了解，官网和中文社区是个好去处。</p>
+<h2 id="huan-jing-zhun-bei">环境准备</h2>
+<p>资源有限，用 docker 来模拟多个服务器的情况，先准备 docker 环境。 我这里宿主机是 centos 7， 参考 docker 官方文档, 依次安装 docker 和 docker-composer。</p>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#608b4e;"># setup repository
+</span><span>yum install -y yum-utils \
+</span><span>  device-mapper-persistent-data \
+</span><span>  lvm2
+</span><span>
+</span><span>yum-config-manager \
+</span><span>    --add-repo \
+</span><span>    https://download.docker.com/linux/centos/docker-ce.repo
+</span><span>
+</span><span>yum-config-manager --disable docker-ce-nightly
+</span><span>
+</span><span>yum install -y docker-ce docker-ce-cli containerd.io
+</span><span>
+</span><span style="color:#608b4e;"># start docker
+</span><span>systemctl start docker
+</span><span>
+</span><span style="color:#608b4e;"># enable docker auto start
+</span><span>systemctl enable docker
+</span><span>
+</span><span style="color:#608b4e;"># install docker-composer
+</span><span>curl -L </span><span style="color:#d69d85;">&quot;https://github.com/docker/compose/releases/download/1.25.4/docker-compose-$(</span><span>uname -s</span><span style="color:#d69d85;">)-$(</span><span>uname -m</span><span style="color:#d69d85;">)&quot;</span><span> -o /usr/local/bin/docker-compose
+</span><span>chmod +x /usr/local/bin/docker-compose
+</span><span>
+</span><span style="color:#608b4e;"># test docker and composer
+</span><span>docker info
+</span><span>docker-compose version
+</span></code></pre>
+<p>要模拟整个安装流程，因此只准备一个基础的镜像，仅安装必要的软件包。<code>Dockerfile</code> 如下：</p>
+<pre data-lang="dockerfile" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-dockerfile "><code class="language-dockerfile" data-lang="dockerfile"><span style="color:#569cd6;">FROM</span><span> centos:centos7
+</span><span>
+</span><span style="color:#569cd6;">RUN </span><span>yum install -y wget
+</span><span>
+</span><span style="color:#608b4e;"># 够用阿里云的镜像，在国内，加速包下载
+</span><span style="color:#608b4e;"># 安装基本的软件包，并支持 sshd 服务，greenplum 节点之间通讯需要
+</span><span style="color:#569cd6;">RUN </span><span>wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo &amp;&amp; \
+</span><span>    yum makecache  &amp;&amp; \
+</span><span>    yum install -y which bind-utils net-tools less wget curl zip unzip telnet lsof git &amp;&amp; \
+</span><span>    yum install -y passwd openssh-clients openssh-server ssh-keygen &amp;&amp; \
+</span><span>    ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N </span><span style="color:#d69d85;">&quot;&quot;</span><span> -q &amp;&amp; \
+</span><span>    ssh-keygen -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key -N </span><span style="color:#d69d85;">&quot;&quot;</span><span> -q &amp;&amp; \
+</span><span>    ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N </span><span style="color:#d69d85;">&quot;&quot;</span><span> -q &amp;&amp; \
+</span><span>    echo </span><span style="color:#d69d85;">&#39;UseDNS no&#39;</span><span> &gt;&gt; /etc/ssh/sshd_config
+</span><span>
+</span><span style="color:#608b4e;"># 安装 greenplum 依赖包
+</span><span style="color:#569cd6;">RUN </span><span>yum install -y ed apr apr-util bzip2 krb5-devel libevent libyaml openssl iproute
+</span><span>
+</span><span style="color:#608b4e;"># 初始化用户和数据文件
+</span><span style="color:#569cd6;">RUN </span><span>useradd -m gpadmin
+</span><span style="color:#569cd6;">RUN </span><span>mkdir -p /data &amp;&amp; chown -R gpadmin:gpadmin /data
+</span><span>
+</span><span style="color:#569cd6;">EXPOSE </span><span>22
+</span><span>
+</span><span style="color:#569cd6;">CMD </span><span>[</span><span style="color:#d69d85;">&quot;/usr/sbin/sshd&quot;</span><span>, </span><span style="color:#d69d85;">&quot;-D&quot;</span><span>]
+</span></code></pre>
+<p>build 基于 centos 7 的镜像，名为 <code>mygreenplum</code>，后面我们用到这个镜像。</p>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span>docker build . -t mygreenplum
+</span></code></pre>
+<p>准备 <code>docker-compose.yaml</code></p>
+<blockquote>
+<p>规划 1 个 master 节点，2 个 segment 节点，1 个 ETL 节点（用来做 ETL 任务）</p>
+<p>节点命名参考官方命名习惯: mdw ( master 节点 )</p>
+<p>另外注意，需要准备一个内存大一点的服务器，我的这里的试验机为 8G 内存</p>
+</blockquote>
+<pre data-lang="yaml" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-yaml "><code class="language-yaml" data-lang="yaml"><span style="background-color:#282828;color:#569cd6;">version</span><span>: </span><span style="color:#d69d85;">&quot;3&quot;
+</span><span style="background-color:#282828;color:#569cd6;">services</span><span>:
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">master</span><span>:
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">image</span><span>: </span><span style="color:#d69d85;">&quot;mygreenplum&quot;
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">hostname</span><span>: </span><span style="color:#d69d85;">&quot;mdw&quot;
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">container_name</span><span>: </span><span style="color:#d69d85;">&quot;master&quot;
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">ports</span><span>:
+</span><span>      - </span><span style="color:#d69d85;">&quot;2222:22&quot;
+</span><span>      - </span><span style="color:#d69d85;">&quot;5432:5432&quot;
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">sysctls</span><span>:
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">net.core.somaxconn</span><span>: </span><span style="color:#b5cea8;">1024
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">net.ipv4.tcp_syncookies</span><span>: </span><span style="color:#b5cea8;">0
+</span><span>
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">volumes</span><span>:
+</span><span>      - </span><span style="background-color:#282828;color:#d69d85;">.:/root/downloads</span><span>
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">networks</span><span>:
+</span><span>      </span><span style="background-color:#282828;color:#569cd6;">main</span><span>:
+</span><span>        </span><span style="background-color:#282828;color:#569cd6;">aliases</span><span>:
+</span><span>          - </span><span style="color:#d69d85;">&quot;master&quot;
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">segment01</span><span>:
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">image</span><span>: </span><span style="color:#d69d85;">&quot;mygreenplum&quot;
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">hostname</span><span>: </span><span style="color:#d69d85;">&quot;segment01&quot;
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">container_name</span><span>: </span><span style="color:#d69d85;">&quot;segment01&quot;
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">volumes</span><span>:
+</span><span>      - </span><span style="background-color:#282828;color:#d69d85;">.:/root/downloads</span><span>
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">networks</span><span>:
+</span><span>      </span><span style="background-color:#282828;color:#569cd6;">main</span><span>:
+</span><span>        </span><span style="background-color:#282828;color:#569cd6;">aliases</span><span>:
+</span><span>          - </span><span style="color:#d69d85;">&quot;segment01&quot;
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">segment02</span><span>:
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">image</span><span>: </span><span style="color:#d69d85;">&quot;mygreenplum&quot;
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">hostname</span><span>: </span><span style="color:#d69d85;">&quot;segment02&quot;
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">container_name</span><span>: </span><span style="color:#d69d85;">&quot;segment02&quot;
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">volumes</span><span>:
+</span><span>      - </span><span style="background-color:#282828;color:#d69d85;">.:/root/downloads</span><span>
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">networks</span><span>:
+</span><span>      </span><span style="background-color:#282828;color:#569cd6;">main</span><span>:
+</span><span>        </span><span style="background-color:#282828;color:#569cd6;">aliases</span><span>:
+</span><span>          - </span><span style="color:#d69d85;">&quot;segment02&quot;
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">segment03</span><span>:
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">image</span><span>: </span><span style="color:#d69d85;">&quot;mygreenplum&quot;
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">hostname</span><span>: </span><span style="color:#d69d85;">&quot;segment03&quot;
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">container_name</span><span>: </span><span style="color:#d69d85;">&quot;segment03&quot;
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">volumes</span><span>:
+</span><span>      - </span><span style="background-color:#282828;color:#d69d85;">.:/root/downloads</span><span>
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">networks</span><span>:
+</span><span>      </span><span style="background-color:#282828;color:#569cd6;">main</span><span>:
+</span><span>        </span><span style="background-color:#282828;color:#569cd6;">aliases</span><span>:
+</span><span>          - </span><span style="color:#d69d85;">&quot;segment03&quot;
+</span><span>
+</span><span style="background-color:#282828;color:#569cd6;">networks</span><span>:
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">main</span><span>:
+</span></code></pre>
+<p>github 下载 Greenplum 二进制安装包</p>
+<pre style="background-color:#1e1e1e;color:#dcdcdc;"><code><span>wget https://github.com/greenplum-db/gpdb/releases/download/6.4.0/greenplum-db-6.4.0-rhel7-x86_64.rpm
+</span></code></pre>
+<p>启动服务</p>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span>docker-composer up -d
+</span><span>
+</span><span style="color:#608b4e;"># 查看启动情况
+</span><span>docker ps -a
+</span></code></pre>
+<h2 id="an-zhuang">安装</h2>
+<p>参考 <a href="https://gpdb.docs.pivotal.io/6-4/install_guide/install_gpdb.html">pivotal 上的安装指导</a>, 由于是在 docker 里，指导里的系统配置部分可以省略，实际生产环境建议遵循指导手册说明，以及相关参数的调优。</p>
+<p>进入 master 节点，初始化其 gpadmin 用户 ssh 密钥</p>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span>docker exec -it master /bin/bash -c </span><span style="color:#d69d85;">&#39;su - gpadmin&#39;
+</span><span>ssh-keygen
+</span><span>cat ~/.ssh/id_rsa.pub
+</span></code></pre>
+<p>进入 其他节点，把 master 节点的 ssh 公钥写入 gpadmin 用户下</p>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span>docker exec -it segment01 /bin/bash -c </span><span style="color:#d69d85;">&#39;su - gpadmin&#39;
+</span><span>mkdir .ssh
+</span><span>vi .ssh/authorized_keys
+</span><span>chmod 700 .ssh </span><span style="color:#569cd6;">&amp;&amp; </span><span>chmod 600 .ssh/authorized_keys
+</span></code></pre>
+<p>回到 master 节点，准备 greenplum-db 的安装</p>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span>docker exec -it master /bin/bash
+</span><span style="color:#608b4e;"># root 用户执行安装
+</span><span>yum install -y downloads/greenplum-db-6.4.0-rhel7-x86_64.rpm
+</span><span>chown -R gpadmin:gpadmin /usr/local/greenplum</span><span style="color:#569cd6;">*
+</span><span>
+</span><span style="color:#608b4e;"># 切换到 gpadmin 修改 profile
+</span><span>su - gpadmin
+</span><span>mkdir -p /data/master
+</span><span>vi ~/.bash_profile
+</span></code></pre>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span>source /usr/local/greenplum-db/greenplum_path.sh
+</span><span style="color:#569cd6;">export </span><span>MASTER_DATA_DIRECTORY=</span><span style="background-color:#282828;color:#d69d85;">/data/master/gpseg-1</span><span>
+</span></code></pre>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#608b4e;"># 应用 profile
+</span><span>source ~/.bash_prifile
+</span><span>
+</span><span style="color:#608b4e;"># 准备 hostfile_exkeys 将所有的 segment、etl 节点的 hostname 都写到里面
+</span><span>vi hostfile_exkeys
+</span></code></pre>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#608b4e;"># 验证所有的节点都是可以连接的
+</span><span>gpssh -f hostfile_exkeys -e </span><span style="color:#d69d85;">&#39;uname -a&#39;
+</span></code></pre>
+<p>进入其他节点，和 master 节点一样，安装 greenplum-db 的 rpm 包</p>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span>docker exec -it segment01 /bin/bash
+</span><span>yum install -y downloads/greenplum-db-6.4.0-rhel7-x86_64.rpm
+</span><span>chown -R gpadmin:gpadmin /usr/local/greenplum</span><span style="color:#569cd6;">*
+</span></code></pre>
+<h2 id="chu-shi-hua">初始化</h2>
+<h2 id="deng-lu">登录</h2>
+<h2 id="ce-shi-dao-ru-shu-ju">测试导入数据</h2>
+<p>参考资料：</p>
+<ul>
+<li>Docker: https://docs.docker.com/install/</li>
+<li>Greenplum: https://github.com/greenplum-db/gpdb &amp; https://greenplum.org/</li>
+<li>pivotal gpdp: https://gpdb.docs.pivotal.io/6-4/main/index.html</li>
+</ul>
+
+    
+    <div class="giscus"></div>
+    <script src="https://giscus.app/client.js"
+      data-repo="yinheli/yinheli.github.com"
+      data-repo-id="MDEwOlJlcG9zaXRvcnkzMTUzMzI5OQ=="
+      data-category="General"
+      data-category-id="DIC_kwDOAeEo884CUUss"
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="dark"
+      data-lang="zh-CN"
+      crossorigin="anonymous"
+      async>
+    </script>
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://yinheli.com/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://yinheli.com/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.body.classList;
+        const getSessionTheme = sessionStorage.getItem("theme");
+        if (getSessionTheme === "dark") {
+            cls.toggle("dark-mode", true);
+        } else if (getSessionTheme === "light") {
+            cls.toggle("dark-mode", false);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            cls.toggle("dark-mode", true);
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", true);
+            sessionStorage.setItem("theme", "dark");
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", false);
+            sessionStorage.setItem("theme", "light");
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>

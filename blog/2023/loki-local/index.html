@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Develop notes">
+    <title>Henry | 本地运行 loki 查询</title>
+    <link rel="stylesheet" href="https://yinheli.com/style.css?h=5c5abba3a670f76f59be" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+    
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-5647601-2');
+    </script>
+    
+    
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://yinheli.com/atom.xml">
+    
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;yinheli.com">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>本地运行 loki 查询</h1>
+    
+    <p class="secondary">12 December, 2023</p>
+    
+    <div class="space"></div>
+    <p>loki 的 <a href="https://grafana.com/docs/loki/latest/query/">LogQL</a> 使用体验还是很好的，一方面能过滤查询，另一方面还能看到日志的趋势。</p>
+<p>我的场景是要临时分析 CDN 的某个域名的日志</p>
+<h2 id="zhun-bei-docker-compose-yun-xing-huan-jing">准备 docker compose 运行环境</h2>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span>vi loki.yaml
+</span></code></pre>
+<pre data-lang="yaml" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-yaml "><code class="language-yaml" data-lang="yaml"><span style="background-color:#282828;color:#569cd6;">auth_enabled</span><span>: </span><span style="color:#569cd6;">false
+</span><span>
+</span><span style="background-color:#282828;color:#569cd6;">server</span><span>:
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">http_listen_port</span><span>: </span><span style="color:#b5cea8;">3100
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">grpc_server_max_recv_msg_size</span><span>: </span><span style="color:#b5cea8;">41943040
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">grpc_server_max_send_msg_size</span><span>: </span><span style="color:#b5cea8;">41943040
+</span><span>
+</span><span style="background-color:#282828;color:#569cd6;">common</span><span>:
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">path_prefix</span><span>: </span><span style="background-color:#282828;color:#d69d85;">/loki</span><span>
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">storage</span><span>:
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">filesystem</span><span>:
+</span><span>      </span><span style="background-color:#282828;color:#569cd6;">chunks_directory</span><span>: </span><span style="background-color:#282828;color:#d69d85;">/loki/chunks</span><span>
+</span><span>      </span><span style="background-color:#282828;color:#569cd6;">rules_directory</span><span>: </span><span style="background-color:#282828;color:#d69d85;">/loki/rules</span><span>
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">replication_factor</span><span>: </span><span style="color:#b5cea8;">1
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">ring</span><span>:
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">kvstore</span><span>:
+</span><span>      </span><span style="background-color:#282828;color:#569cd6;">store</span><span>: </span><span style="background-color:#282828;color:#d69d85;">inmemory</span><span>
+</span><span>
+</span><span style="background-color:#282828;color:#569cd6;">schema_config</span><span>:
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">configs</span><span>:
+</span><span>    - </span><span style="background-color:#282828;color:#569cd6;">from</span><span>: </span><span style="color:#b4cea8;">2020-10-24
+</span><span>      </span><span style="background-color:#282828;color:#569cd6;">store</span><span>: </span><span style="background-color:#282828;color:#d69d85;">boltdb-shipper</span><span>
+</span><span>      </span><span style="background-color:#282828;color:#569cd6;">object_store</span><span>: </span><span style="background-color:#282828;color:#d69d85;">filesystem</span><span>
+</span><span>      </span><span style="background-color:#282828;color:#569cd6;">schema</span><span>: </span><span style="background-color:#282828;color:#d69d85;">v11</span><span>
+</span><span>      </span><span style="background-color:#282828;color:#569cd6;">index</span><span>:
+</span><span>        </span><span style="background-color:#282828;color:#569cd6;">prefix</span><span>: </span><span style="background-color:#282828;color:#d69d85;">index_</span><span>
+</span><span>        </span><span style="background-color:#282828;color:#569cd6;">period</span><span>: </span><span style="background-color:#282828;color:#d69d85;">24h</span><span>
+</span><span style="background-color:#282828;color:#569cd6;">limits_config</span><span>:
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">reject_old_samples</span><span>: </span><span style="color:#569cd6;">false
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">ingestion_rate_mb</span><span>: </span><span style="color:#b5cea8;">1024
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">per_stream_rate_limit</span><span>: </span><span style="background-color:#282828;color:#d69d85;">512MB</span><span>
+</span></code></pre>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span>vi docker-compose.yaml
+</span></code></pre>
+<pre data-lang="yaml" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-yaml "><code class="language-yaml" data-lang="yaml"><span style="background-color:#282828;color:#569cd6;">version</span><span>: </span><span style="color:#d69d85;">&quot;3&quot;
+</span><span>
+</span><span style="background-color:#282828;color:#569cd6;">services</span><span>:
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">loki</span><span>:
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">image</span><span>: </span><span style="background-color:#282828;color:#d69d85;">docker.mirrors.sjtug.sjtu.edu.cn/grafana/loki</span><span>
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">user</span><span>: </span><span style="background-color:#282828;color:#d69d85;">root</span><span>
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">volumes</span><span>:
+</span><span>      - </span><span style="background-color:#282828;color:#d69d85;">/data/loki:/loki</span><span>
+</span><span>      - </span><span style="background-color:#282828;color:#d69d85;">./loki.yaml:/etc/loki/local-config.yaml</span><span>
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">ports</span><span>:
+</span><span>      - </span><span style="color:#d69d85;">&quot;3100:3100&quot;
+</span><span>
+</span><span>  </span><span style="background-color:#282828;color:#569cd6;">grafana</span><span>:
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">image</span><span>: </span><span style="background-color:#282828;color:#d69d85;">docker.mirrors.sjtug.sjtu.edu.cn/grafana/grafana</span><span>
+</span><span>    </span><span style="background-color:#282828;color:#569cd6;">ports</span><span>:
+</span><span>      - </span><span style="color:#d69d85;">&quot;3000:3000&quot;
+</span></code></pre>
+<h2 id="dao-ru-ri-zhi">导入日志</h2>
+<p>可以用 promtail 或者如果数据有自己的预处理需求，就直接写个脚本，我这里写的 python 脚本来处理</p>
+<pre data-lang="python" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#9b9b9b;">import </span><span>gzip
+</span><span style="color:#9b9b9b;">import </span><span>json
+</span><span style="color:#9b9b9b;">import </span><span>os
+</span><span>
+</span><span style="color:#9b9b9b;">import </span><span>httpx
+</span><span>
+</span><span style="color:#608b4e;"># https://console.bce.baidu.com/cdn/#/cdn/customlog
+</span><span>fields = </span><span style="color:#d69d85;">&#39;remote_addr remote_ip remote_port jvip time_local scheme host format_time request status bytes_sent body_bytes_sent sent_http_content_length http_content_length request_time request_time_ms connection udf_hit http_range http_referer http_cookie http_user_agent http_x_forwarded_for ssl_protocol sent_http_content_type sent_http_content_range server_protocol http_accept log_level req_len url request_method uri http_ver log_timestamp_ms log_timestamp_s&#39;</span><span>.split(</span><span style="color:#d69d85;">&#39; &#39;</span><span>)
+</span><span>
+</span><span style="color:#569cd6;">def </span><span>iter_log(batch=</span><span style="color:#b5cea8;">1000</span><span>):
+</span><span>    items = []
+</span><span>    </span><span style="color:#608b4e;"># list dir gzip iter all gz files
+</span><span>    </span><span style="color:#569cd6;">for </span><span>file </span><span style="color:#569cd6;">in </span><span>sorted(os.listdir(</span><span style="color:#d69d85;">&#39;.&#39;</span><span>)):
+</span><span>        </span><span style="color:#569cd6;">if </span><span>file.endswith(</span><span style="color:#d69d85;">&#39;.gz&#39;</span><span>):
+</span><span>            </span><span style="color:#569cd6;">with </span><span>gzip.open(file, </span><span style="color:#d69d85;">&#39;rt&#39;</span><span>) </span><span style="color:#569cd6;">as </span><span>f:
+</span><span>                </span><span style="color:#569cd6;">for </span><span>line </span><span style="color:#569cd6;">in </span><span>f:
+</span><span>                    line = line.strip()
+</span><span>                    </span><span style="color:#569cd6;">if not </span><span>line:
+</span><span>                        </span><span style="color:#569cd6;">continue
+</span><span>                    line = line.split(</span><span style="color:#d69d85;">&#39;</span><span style="color:#e3bbab;">\t</span><span style="color:#d69d85;">&#39;</span><span>)
+</span><span>                    </span><span style="color:#569cd6;">if </span><span>len(line) != len(fields):
+</span><span>                        </span><span style="color:#569cd6;">continue
+</span><span>                    item = dict(zip(fields, line))
+</span><span>                    items.append([str(int(item[</span><span style="color:#d69d85;">&#39;log_timestamp_ms&#39;</span><span>]) * </span><span style="color:#b5cea8;">1000000</span><span>), json.dumps(item, ensure_ascii=</span><span style="color:#569cd6;">False</span><span>)])
+</span><span>                    </span><span style="color:#569cd6;">if </span><span>len(items) == batch:
+</span><span>                        </span><span style="color:#569cd6;">yield </span><span>items
+</span><span>                        items = []
+</span><span>    </span><span style="color:#569cd6;">if </span><span>items:
+</span><span>        </span><span style="color:#569cd6;">yield </span><span>items
+</span><span>
+</span><span>
+</span><span style="color:#608b4e;"># https://grafana.com/docs/loki/latest/reference/api/
+</span><span style="color:#569cd6;">for </span><span>items </span><span style="color:#569cd6;">in </span><span>iter_log(batch=</span><span style="color:#b5cea8;">1000</span><span>):
+</span><span>    data = {
+</span><span>        </span><span style="color:#d69d85;">&quot;streams&quot;</span><span>: [
+</span><span>            {
+</span><span>                </span><span style="color:#d69d85;">&quot;stream&quot;</span><span>: {
+</span><span>                    </span><span style="color:#d69d85;">&quot;cdn&quot;</span><span>: </span><span style="color:#d69d85;">&quot;baidu&quot;
+</span><span>                },
+</span><span>                </span><span style="color:#d69d85;">&quot;values&quot;</span><span>: items
+</span><span>            }
+</span><span>        ]
+</span><span>    }
+</span><span>    r = httpx.post(</span><span style="color:#d69d85;">&#39;http://127.0.0.1:3100/loki/api/v1/push&#39;</span><span>, json=data)
+</span><span>    </span><span style="color:#569cd6;">if </span><span>r.status_code != </span><span style="color:#b5cea8;">204</span><span>:
+</span><span>        print(r.status_code, r.text)
+</span></code></pre>
+
+    
+    <div class="giscus"></div>
+    <script src="https://giscus.app/client.js"
+      data-repo="yinheli/yinheli.github.com"
+      data-repo-id="MDEwOlJlcG9zaXRvcnkzMTUzMzI5OQ=="
+      data-category="General"
+      data-category-id="DIC_kwDOAeEo884CUUss"
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="dark"
+      data-lang="zh-CN"
+      crossorigin="anonymous"
+      async>
+    </script>
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://yinheli.com/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://yinheli.com/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.body.classList;
+        const getSessionTheme = sessionStorage.getItem("theme");
+        if (getSessionTheme === "dark") {
+            cls.toggle("dark-mode", true);
+        } else if (getSessionTheme === "light") {
+            cls.toggle("dark-mode", false);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            cls.toggle("dark-mode", true);
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", true);
+            sessionStorage.setItem("theme", "dark");
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", false);
+            sessionStorage.setItem("theme", "light");
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>
