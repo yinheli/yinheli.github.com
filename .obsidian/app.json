@@ -6,5 +6,6 @@
   "tabSize": 2,
   "showInlineTitle": true,
   "readableLineLength": true,
-  "showFrontmatter": true
+  "showFrontmatter": true,
+  "vimMode": true
 }

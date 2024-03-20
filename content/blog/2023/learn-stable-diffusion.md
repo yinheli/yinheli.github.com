@@ -5,11 +5,8 @@ tags:
   - stable-diffusion
   - sd
 date: 2022-10-07
-draft: true
+draft: false
 ---
- 
-resource: https://www.cnblogs.com/zackstang/p/17324263.html#_label4
-
 
 # 开始
 
@@ -35,11 +32,4 @@ https://github.com/comfyanonymous/ComfyUI
 
 - C站 https://civitai.com/
 - 哩布哩布 https://www.liblib.ai/
-
-# prompt
-
-# inpainting
-
-# Upscaler
-
 
