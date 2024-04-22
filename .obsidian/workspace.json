@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "content/blog/2024/ucloud-cdn-log-parser.md",
+                "file": "content/blog/2024/transcode-with-spot.md",
                 "mode": "source",
                 "source": false
               }
@@ -104,7 +104,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "content/blog/2024/ucloud-cdn-log-parser.md",
+                "file": "content/blog/2024/transcode-with-spot.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -121,7 +121,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "content/blog/2024/ucloud-cdn-log-parser.md",
+                "file": "content/blog/2024/transcode-with-spot.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -133,7 +133,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "content/blog/2024/ucloud-cdn-log-parser.md"
+                "file": "content/blog/2024/transcode-with-spot.md"
               }
             }
           }
@@ -157,8 +157,11 @@
   },
   "active": "f0f054fa2652de11",
   "lastOpenFiles": [
-    "content/blog/2024/_index.md",
+    "content/blog/2023/pytorch-mirror.md",
+    "content/blog/2023/nginx-url-decode-issue.md",
     "content/blog/2024/ucloud-cdn-log-parser.md",
+    "content/blog/2024/transcode-with-spot.md",
+    "content/blog/2024/_index.md",
     "content/blog/2023/aliyun-k8s-reduce-costs.md",
     "content/blog/2023/k8s-node-shell.md",
     "content/blog/2023/kaniko-build-cli.md",
@@ -167,9 +170,7 @@
     "content/blog/2024",
     "content/blog/2023/learn-stable-diffusion.md",
     "content/blog/2023/postgresql-upgrade.md",
-    "content/blog/2023/pytorch-mirror.md",
     "content/blog/2023/loki-local.md",
-    "content/blog/2023/nginx-url-decode-issue.md",
     "public/img/fav@1x.png",
     "public/img/fav.png",
     "public/style.css",
