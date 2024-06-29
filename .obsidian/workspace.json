@@ -31,8 +31,8 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "content/blog/2020/greenplum-get-starting.md",
-                "mode": "preview",
+                "file": "content/blog/2024/ai-camp.md",
+                "mode": "source",
                 "source": false
               }
             }
@@ -122,7 +122,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "content/blog/2020/greenplum-get-starting.md",
+                "file": "content/blog/2024/ai-camp.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -139,7 +139,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "content/blog/2020/greenplum-get-starting.md",
+                "file": "content/blog/2024/ai-camp.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -151,7 +151,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "content/blog/2020/greenplum-get-starting.md"
+                "file": "content/blog/2024/ai-camp.md"
               }
             }
           }
@@ -175,13 +175,14 @@
   },
   "active": "634ee22132439005",
   "lastOpenFiles": [
+    "content/blog/2024/web3-security-sss-tss-mpc-vss.md",
+    "content/blog/2024/ai-camp.md",
+    "content/blog/2024/hunting-job-2024.md",
+    "content/blog/2020/greenplum-get-starting.md",
     "content/blog/2018/gorm-custom-type.md",
     "content/blog/2017/raspberry-install-without-keyboard.md",
     "content/blog/2024/transcode-with-spot.md",
-    "content/blog/2024/web3-security-sss-tss-mpc-vss.md",
-    "content/blog/2024/hunting-job-2024.md",
     "content/blog/2024/ucloud-cdn-log-parser.md",
-    "content/blog/2020/greenplum-get-starting.md",
     "content/blog/2023/aliyun-k8s-reduce-costs.md",
     "content/blog/2023/pytorch-mirror.md",
     "content/blog/2023/nginx-url-decode-issue.md",
@@ -211,7 +212,6 @@
     "content/blog/2015/install-vmware-centos6-issue.md",
     "content/blog/2015/iptables-notes.md",
     "content/blog/2015/mysql-import-export.md",
-    "content/blog/2017/_index.md",
-    "README.md"
+    "content/blog/2017/_index.md"
   ]
 }
