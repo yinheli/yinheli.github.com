@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Develop notes">
+    <title>Henry | kubernetes node shell plugin</title>
+    <link rel="stylesheet" href="https://yinheli.com/style.css?h=5c5abba3a670f76f59be" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+    
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-5647601-2');
+    </script>
+    
+    
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://yinheli.com/atom.xml">
+    
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;yinheli.com">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>kubernetes node shell plugin</h1>
+    
+    <p class="secondary">29 January, 2023</p>
+    
+    <div class="space"></div>
+    <p><code>kubectl exec</code> 可以进到 pod 容器内获取 shell，有时候需要 shell 到 node，而原生的 <code>kubectl debug</code> 虽然支持但是不支持特权模式，拿不到 root 权限，也不能用宿主机上的大部分工具，发现 <code>Lens</code> 上有这个功能，把核心的部分拷贝出来，做成脚本，作为 <code>kubectl</code> 插件。</p>
+<p>将 <code>kubectl-shell</code> 放到 <code>PATH</code> 即可， <code>kubectl shell &lt;node-name&gt;</code></p>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span>vi kubectl-shell
+</span></code></pre>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#608b4e;">#!/bin/bash
+</span><span>set -e
+</span><span>
+</span><span>node=</span><span style="background-color:#282828;color:#d69d85;">${</span><span style="background-color:#282828;color:#dcdcdc;">1</span><span style="background-color:#282828;color:#d69d85;">}</span><span>
+</span><span>nodeName=</span><span style="background-color:#282828;color:#d69d85;">$(</span><span style="background-color:#282828;color:#dcdcdc;">kubectl</span><span style="background-color:#282828;color:#d69d85;"> get node ${</span><span style="background-color:#282828;color:#dcdcdc;">node</span><span style="background-color:#282828;color:#d69d85;">}</span><span style="background-color:#282828;color:#dcdcdc;"> -o</span><span style="background-color:#282828;color:#d69d85;"> template</span><span style="background-color:#282828;color:#dcdcdc;"> --template=</span><span style="background-color:#282828;color:#d69d85;">&#39;{{index .metadata.labels &quot;kubernetes.io/hostname&quot;}}&#39;)</span><span> 
+</span><span>nodeSelector=</span><span style="background-color:#282828;color:#d69d85;">&#39;&quot;nodeSelector&quot;: { &quot;kubernetes.io/hostname&quot;: &quot;&#39;${</span><span style="background-color:#282828;color:#dcdcdc;">nodeName:?</span><span style="background-color:#282828;color:#d69d85;">}&#39;&quot; },&#39;</span><span>
+</span><span>podName=</span><span style="background-color:#282828;color:#d69d85;">node-shell-${</span><span style="background-color:#282828;color:#dcdcdc;">node</span><span style="background-color:#282828;color:#d69d85;">}</span><span>
+</span><span>
+</span><span>kubectl run ${podName:?} --restart=Never -it --rm --timeout=5m --pod-running-timeout=5m --image overriden --overrides </span><span style="color:#d69d85;">&#39;
+</span><span style="color:#d69d85;">{
+</span><span style="color:#d69d85;">  &quot;spec&quot;: {
+</span><span style="color:#d69d85;">    &quot;hostPID&quot;: true,
+</span><span style="color:#d69d85;">    &quot;hostNetwork&quot;: true,
+</span><span style="color:#d69d85;">    &#39;&quot;${</span><span>nodeSelector?</span><span style="color:#d69d85;">}&quot;&#39;
+</span><span style="color:#d69d85;">    &quot;tolerations&quot;: [{
+</span><span style="color:#d69d85;">        &quot;operator&quot;: &quot;Exists&quot;
+</span><span style="color:#d69d85;">    }],
+</span><span style="color:#d69d85;">    &quot;containers&quot;: [
+</span><span style="color:#d69d85;">      {
+</span><span style="color:#d69d85;">        &quot;name&quot;: &quot;shell&quot;,
+</span><span style="color:#d69d85;">        &quot;image&quot;: &quot;alpine&quot;,
+</span><span style="color:#d69d85;">        &quot;command&quot;: [
+</span><span style="color:#d69d85;">          &quot;nsenter&quot;, &quot;-t&quot;, &quot;1&quot;, &quot;-m&quot;, &quot;-u&quot;, &quot;-i&quot;, &quot;-n&quot;,
+</span><span style="color:#d69d85;">          &quot;bash&quot;
+</span><span style="color:#d69d85;">        ],
+</span><span style="color:#d69d85;">        &quot;stdin&quot;: true,
+</span><span style="color:#d69d85;">        &quot;tty&quot;: true,
+</span><span style="color:#d69d85;">        &quot;securityContext&quot;: {
+</span><span style="color:#d69d85;">          &quot;privileged&quot;: true
+</span><span style="color:#d69d85;">        }
+</span><span style="color:#d69d85;">      }
+</span><span style="color:#d69d85;">    ]
+</span><span style="color:#d69d85;">  }
+</span><span style="color:#d69d85;">}&#39;</span><span> --attach </span><span style="color:#d69d85;">&quot;$</span><span>@</span><span style="color:#d69d85;">&quot;
+</span></code></pre>
+<p>原理：</p>
+<p>创建一个有特权模式的 pod，调度到对应的 node 上运行，然后 <a href="https://man7.org/linux/man-pages/man1/nsenter.1.html"><code>nsenter</code></a>  拿到 root shell</p>
+<p>P.S.</p>
+<p>发现已有社区相关<a href="https://github.com/kvaps/kubectl-node-shell">插件</a>了，下次可以先去 <a href="https://krew.sigs.k8s.io/plugins/">krew</a> 找一下 :)</p>
+
+    
+    <div class="giscus"></div>
+    <script src="https://giscus.app/client.js"
+      data-repo="yinheli/yinheli.github.com"
+      data-repo-id="MDEwOlJlcG9zaXRvcnkzMTUzMzI5OQ=="
+      data-category="General"
+      data-category-id="DIC_kwDOAeEo884CUUss"
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="dark"
+      data-lang="zh-CN"
+      crossorigin="anonymous"
+      async>
+    </script>
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://yinheli.com/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://yinheli.com/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.body.classList;
+        const getSessionTheme = sessionStorage.getItem("theme");
+        if (getSessionTheme === "dark") {
+            cls.toggle("dark-mode", true);
+        } else if (getSessionTheme === "light") {
+            cls.toggle("dark-mode", false);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            cls.toggle("dark-mode", true);
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", true);
+            sessionStorage.setItem("theme", "dark");
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", false);
+            sessionStorage.setItem("theme", "light");
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>

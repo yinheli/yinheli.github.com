@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Develop notes">
+    <title>Henry | pytorch 镜像</title>
+    <link rel="stylesheet" href="https://yinheli.com/style.css?h=5c5abba3a670f76f59be" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+    
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-5647601-2');
+    </script>
+    
+    
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://yinheli.com/atom.xml">
+    
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;yinheli.com">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>pytorch 镜像</h1>
+    
+    <p class="secondary">8 August, 2023</p>
+    
+    <div class="space"></div>
+    <p>pytorch 仅有一个 wheels 下载站 https://download.pytorch.org/whl ,当然 pip 是可以识别 <code>find-links</code> 类型的，但是在国内的网络环境下，下载却非常慢，尝试用上海交大的镜像，能临时解决问题，不过我们要在项目中构建 Docker 镜像，还是用免费的 nexus 私服构建代理比较合适。</p>
+<p>而 nexus 私服的 pypi 只支持代理 pypi 的上游，不支持 <code>find-links</code> 规范，故曲线救国，先手动把 whl 包下载下来，再用 <code>twine</code> 上传/发布到私服。</p>
+<p>先到华中科大的<a href="https://mirror.sjtu.edu.cn/pytorch-wheels/cu118/?mirror_intel_list">镜像站</a>下载需要的 whl 包 , 留意下载地址的那个参数，必传否则跳转到官方，可能机器学习大热华中科大的流量也是比较惊人吧。</p>
+<ol>
+<li>在浏览器的 console 执行下面脚本，拷贝所有 linux 的发行包（按照你的需要调整） ```</li>
+</ol>
+<pre data-lang="js" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-js "><code class="language-js" data-lang="js"><span>copy($$(</span><span style="color:#d69d85;">&#39;a&#39;</span><span>).map(it</span><span style="color:#569cd6;">=&gt;</span><span>it.href).filter(it</span><span style="color:#569cd6;">=&gt;</span><span>it.indexOf(</span><span style="color:#d69d85;">&#39;linux&#39;</span><span>)</span><span style="color:#569cd6;">&gt;</span><span style="color:#b5cea8;">0</span><span>).join(</span><span style="color:#d69d85;">&#39;</span><span style="color:#e3bbab;">\n</span><span style="color:#d69d85;">&#39;</span><span>))
+</span></code></pre>
+<ol start="2">
+<li>配置 <code>~/.pypirc</code></li>
+</ol>
+<pre data-lang="ini" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-ini "><code class="language-ini" data-lang="ini"><span style="color:#569cd6;">[distutils]
+</span><span>index-servers </span><span style="color:#569cd6;">=
+</span><span>    nexus-torch-cu118
+</span><span>
+</span><span style="color:#569cd6;">[nexus-torch-cu118]
+</span><span>repository </span><span style="color:#569cd6;">= </span><span style="color:#b4cea8;">https://nexus-server/repository/pytorch-cu118</span><span style="color:#569cd6;">/
+</span><span>username </span><span style="color:#569cd6;">=</span><span> user
+</span><span>password </span><span style="color:#569cd6;">=</span><span> pass
+</span></code></pre>
+<ol start="3">
+<li>安装好 <code>twine</code> ，挨个包执行上传/发布</li>
+</ol>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span>twine upload --repository nexus-torch-cu118 torch-2.0.0+cu118-cp39-cp39-linux_x86_64.whl
+</span></code></pre>
+<ol start="4">
+<li>记得在 pypi group 里加上发布的那个 self-host 仓库</li>
+</ol>
+
+    
+    <div class="giscus"></div>
+    <script src="https://giscus.app/client.js"
+      data-repo="yinheli/yinheli.github.com"
+      data-repo-id="MDEwOlJlcG9zaXRvcnkzMTUzMzI5OQ=="
+      data-category="General"
+      data-category-id="DIC_kwDOAeEo884CUUss"
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="dark"
+      data-lang="zh-CN"
+      crossorigin="anonymous"
+      async>
+    </script>
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://yinheli.com/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://yinheli.com/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.body.classList;
+        const getSessionTheme = sessionStorage.getItem("theme");
+        if (getSessionTheme === "dark") {
+            cls.toggle("dark-mode", true);
+        } else if (getSessionTheme === "light") {
+            cls.toggle("dark-mode", false);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            cls.toggle("dark-mode", true);
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", true);
+            sessionStorage.setItem("theme", "dark");
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", false);
+            sessionStorage.setItem("theme", "light");
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>

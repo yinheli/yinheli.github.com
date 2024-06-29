@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Develop notes">
+    <title>Henry | Datawhale AI 夏令营</title>
+    <link rel="stylesheet" href="https://yinheli.com/style.css?h=5c5abba3a670f76f59be" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+    
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-5647601-2');
+    </script>
+    
+    
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://yinheli.com/atom.xml">
+    
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;yinheli.com">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>Datawhale AI 夏令营</h1>
+    
+    <div class="space"></div>
+    <p>【WIP】笔记等待更新</p>
+
+    
+    <div class="giscus"></div>
+    <script src="https://giscus.app/client.js"
+      data-repo="yinheli/yinheli.github.com"
+      data-repo-id="MDEwOlJlcG9zaXRvcnkzMTUzMzI5OQ=="
+      data-category="General"
+      data-category-id="DIC_kwDOAeEo884CUUss"
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="dark"
+      data-lang="zh-CN"
+      crossorigin="anonymous"
+      async>
+    </script>
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://yinheli.com/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://yinheli.com/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.body.classList;
+        const getSessionTheme = sessionStorage.getItem("theme");
+        if (getSessionTheme === "dark") {
+            cls.toggle("dark-mode", true);
+        } else if (getSessionTheme === "light") {
+            cls.toggle("dark-mode", false);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            cls.toggle("dark-mode", true);
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", true);
+            sessionStorage.setItem("theme", "dark");
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", false);
+            sessionStorage.setItem("theme", "light");
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>

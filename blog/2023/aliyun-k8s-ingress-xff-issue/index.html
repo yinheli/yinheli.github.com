@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Develop notes">
+    <title>Henry | 阿里云 k8s ingress xff 问题</title>
+    <link rel="stylesheet" href="https://yinheli.com/style.css?h=5c5abba3a670f76f59be" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+    
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-5647601-2');
+    </script>
+    
+    
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://yinheli.com/atom.xml">
+    
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;yinheli.com">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>阿里云 k8s ingress xff 问题</h1>
+    
+    <p class="secondary">17 January, 2023</p>
+    
+    <div class="space"></div>
+    <p>在排查 IP 问题的时候发现记录的 IP 有明显问题，都是运营商或者机房的，感觉 xff 出问题了，修改 nginx-ingress 的 ConfigMap 解决，以下为推荐配置，请参考官方文档和业务情况适当调整</p>
+<pre data-lang="yaml" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-yaml "><code class="language-yaml" data-lang="yaml"><span style="background-color:#282828;color:#569cd6;">generate-request-id</span><span>: </span><span style="color:#d69d85;">&quot;true&quot;
+</span><span style="background-color:#282828;color:#569cd6;">use-forwarded-headers</span><span>: </span><span style="color:#d69d85;">&quot;true&quot;
+</span><span style="background-color:#282828;color:#569cd6;">enable-real-ip</span><span>: </span><span style="color:#d69d85;">&quot;true&quot;
+</span><span style="background-color:#282828;color:#569cd6;">proxy-real-ip-cidr</span><span>: </span><span style="color:#d69d85;">&quot;0.0.0.0/0&quot;
+</span><span style="background-color:#282828;color:#569cd6;">proxy-add-original-uri-header</span><span>: </span><span style="color:#d69d85;">&quot;true&quot;
+</span><span style="background-color:#282828;color:#569cd6;">compute-full-forwarded-for</span><span>: </span><span style="color:#d69d85;">&quot;true&quot;
+</span><span style="background-color:#282828;color:#569cd6;">allow-backend-server-header</span><span>: </span><span style="color:#d69d85;">&quot;true&quot;
+</span><span style="background-color:#282828;color:#569cd6;">enable-underscores-in-headers</span><span>: </span><span style="color:#d69d85;">&quot;true&quot;
+</span></code></pre>
+<p>默认的 ingress 对应的负载均衡器为安装时的固定规格，也可以参考 Annotation 配置，调整 nginx-lb 的 service，<a href="https://yinheli.com/blog/2023/aliyun-k8s-reduce-costs/">调整规格</a>，计划方案，如 LCU 计费或包年包月计划等，如果波峰比较大，个人比较推荐 LCU 的计费模式，省钱的同时也能应对突增流量。</p>
+<h2 id="xiang-guan-zi-liao">相关资料</h2>
+<ul>
+<li><a href="https://github.com/kubernetes/ingress-nginx">https://github.com/kubernetes/ingress-nginx</a></li>
+<li><a href="https://kubernetes.github.io/ingress-nginx/">https://kubernetes.github.io/ingress-nginx/</a></li>
+<li><a href="https://help.aliyun.com/document_detail/86531.html">https://help.aliyun.com/document_detail/86531.html</a></li>
+</ul>
+
+    
+    <div class="giscus"></div>
+    <script src="https://giscus.app/client.js"
+      data-repo="yinheli/yinheli.github.com"
+      data-repo-id="MDEwOlJlcG9zaXRvcnkzMTUzMzI5OQ=="
+      data-category="General"
+      data-category-id="DIC_kwDOAeEo884CUUss"
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="dark"
+      data-lang="zh-CN"
+      crossorigin="anonymous"
+      async>
+    </script>
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://yinheli.com/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://yinheli.com/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.body.classList;
+        const getSessionTheme = sessionStorage.getItem("theme");
+        if (getSessionTheme === "dark") {
+            cls.toggle("dark-mode", true);
+        } else if (getSessionTheme === "light") {
+            cls.toggle("dark-mode", false);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            cls.toggle("dark-mode", true);
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", true);
+            sessionStorage.setItem("theme", "dark");
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", false);
+            sessionStorage.setItem("theme", "light");
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>

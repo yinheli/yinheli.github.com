@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Develop notes">
+    <title>Henry | 阿里云 k8s 节约成本记录</title>
+    <link rel="stylesheet" href="https://yinheli.com/style.css?h=5c5abba3a670f76f59be" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+    
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-5647601-2');
+    </script>
+    
+    
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://yinheli.com/atom.xml">
+    
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;yinheli.com">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>阿里云 k8s 节约成本记录</h1>
+    
+    <p class="secondary">11 January, 2023</p>
+    
+    <div class="space"></div>
+    <h1 id="bei-jing">背景</h1>
+<p>公司部分阿里云的项目逐步迁入阿里云的 K8S，由于业务场景需求，迁入版本为 ASK，ASK 是构建在 ECI 之上的，所以所有的工作负载，pod 实际上是对应 ECI 的一个容器，如没有明确指定配置或设定 <code>resource</code> 默认为 <code>2cpu,4G</code> 版本，并且按需付费。</p>
+<p>我们有 3 套环境，测试、 灰度和生产，开发环境则部署在公司办公室环境的本地虚拟服务器中。</p>
+<h1 id="jie-sheng-fang-an">节省方案</h1>
+<h2 id="ce-shi-huan-jing">测试环境</h2>
+<ul>
+<li>无状态负载配置 <code>Cron HPA</code> 定时关闭（设置副本数为 <code>0</code>）（比如每天凌晨）</li>
+<li>优化 cpu &amp; 内存配置，尽量使用抢占式实例，突发性能实例能能节省很多，超乎想象</li>
+<li>尽量使用内网负载均衡器，如果没有外部访问需求，应该创建 <code>ClusterIP</code> 的 service</li>
+<li>实用 <code>LCU</code> 计费的负载均衡器和 ingress</li>
+</ul>
+<h2 id="sheng-chan-huan-jing">生产环境</h2>
+<ul>
+<li>优化 cpu &amp; 内存配置，避免浪费，更多副本可能比更高配的机器省钱，更能避免单点故障</li>
+<li>使用 <code>LCU</code> 计费的负载均衡器，包括 ingress。这比较适合流量峰谷比较明显的场景</li>
+</ul>
+<h1 id="shi-ji-xiao-guo">实际效果</h1>
+<ul>
+<li>测试环境节省超过 70%</li>
+<li>生产环境待评估，预计超过 30%</li>
+</ul>
+<h1 id="xiang-guan-zi-liao">相关资料</h1>
+<ul>
+<li><a href="https://help.aliyun.com/document_detail/154527.htm">ECI 计费文档</a></li>
+<li>ECS <a href="https://www.aliyun.com/price/product#/ecs/detail/vm">价格表</a></li>
+<li>更多<a href="https://help.aliyun.com/document_detail/186939.html">注解说明</a>， 如抢占式突发性能实例</li>
+</ul>
+
+    
+    <div class="giscus"></div>
+    <script src="https://giscus.app/client.js"
+      data-repo="yinheli/yinheli.github.com"
+      data-repo-id="MDEwOlJlcG9zaXRvcnkzMTUzMzI5OQ=="
+      data-category="General"
+      data-category-id="DIC_kwDOAeEo884CUUss"
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="dark"
+      data-lang="zh-CN"
+      crossorigin="anonymous"
+      async>
+    </script>
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://yinheli.com/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://yinheli.com/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.body.classList;
+        const getSessionTheme = sessionStorage.getItem("theme");
+        if (getSessionTheme === "dark") {
+            cls.toggle("dark-mode", true);
+        } else if (getSessionTheme === "light") {
+            cls.toggle("dark-mode", false);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            cls.toggle("dark-mode", true);
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", true);
+            sessionStorage.setItem("theme", "dark");
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", false);
+            sessionStorage.setItem("theme", "light");
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>

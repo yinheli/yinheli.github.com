@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Develop notes">
+    <title>Henry | web3 几个安全相关名词</title>
+    <link rel="stylesheet" href="https://yinheli.com/style.css?h=5c5abba3a670f76f59be" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+    
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-5647601-2');
+    </script>
+    
+    
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://yinheli.com/atom.xml">
+    
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;yinheli.com">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>web3 几个安全相关名词</h1>
+    
+    <p class="secondary">19 June, 2024</p>
+    
+    <div class="space"></div>
+    <h1 id="shamir-s-secret-sharing-sss">Shamir's secret sharing (SSS)</h1>
+<p>是一种基于多项式插值的秘密共享方案。它将秘密信息分割成多个部分，每个部分称为“秘密份额”。只有收集到足够数量的秘密份额，才能使用多项式插值方法还原原始秘密。</p>
+<p><strong>主要特点:</strong></p>
+<ul>
+<li><strong>阈值方案:</strong> 需要达到一定的阈值数量（k）的秘密份额才能恢复秘密。</li>
+<li><strong>灵活:</strong> 可以根据需要调整阈值数量，以控制恢复秘密的难易程度。</li>
+<li><strong>安全:</strong> 即使部分秘密份额丢失或泄露，也不会影响秘密的安全性。</li>
+</ul>
+<p><strong>区别:</strong></p>
+<ul>
+<li>SSS 主要用于秘密信息的共享和恢复，重点在于保护秘密本身。</li>
+<li>SSS 不涉及签名或验证的功能。</li>
+</ul>
+<h1 id="threshold-signature-schemes-tss">Threshold Signature Schemes (TSS)</h1>
+<p> 是一种分布式签名方案，它将签名权力分散到多个参与者中，需要满足一定的阈值条件才能生成有效的签名。</p>
+<p><strong>主要特点:</strong></p>
+<ul>
+<li><strong>分布式签名:</strong> 签名权力分散在多个参与者中，而不是集中在单个实体。</li>
+<li><strong>阈值要求:</strong> 需要达到一定的阈值数量的参与者才能生成有效的签名。</li>
+<li><strong>安全:</strong> 防止单个参与者控制签名权力，提高了签名方案的安全性。</li>
+</ul>
+<p><strong>区别:</strong></p>
+<ul>
+<li>TSS 主要用于生成和验证签名，而不是秘密共享。</li>
+<li>TSS 的重点在于控制签名权力，而不是保护秘密本身。</li>
+</ul>
+<h1 id="multi-party-computation-mpc">Multi-Party Computation (MPC)</h1>
+<p>是一种允许多个参与者合作进行计算，而无需向彼此公开其私有输入信息的协议。</p>
+<p><strong>主要特点:</strong></p>
+<ul>
+<li><strong>隐私保护:</strong> 参与者可以进行联合计算，同时保护其私有输入信息的隐私。</li>
+<li><strong>安全:</strong> 即使一些参与者恶意行为，也不会影响计算结果的正确性。</li>
+<li><strong>广泛应用:</strong> 应用于多个领域，包括加密货币、隐私保护计算、安全多方计算等。</li>
+</ul>
+<p><strong>区别:</strong></p>
+<ul>
+<li>MPC 的重点在于进行安全的联合计算，而不是秘密共享或签名。</li>
+<li>MPC 适用于各种类型的计算，而不仅仅是秘密共享或签名。</li>
+</ul>
+<h1 id="multi-signature-multisig">Multi-Signature (Multisig)</h1>
+<p>是一种需要多个签名才能完成交易的机制。它通常用于提高交易安全性，防止单个签名者的恶意行为。</p>
+<p><strong>主要特点:</strong></p>
+<ul>
+<li><strong>多重签名要求:</strong> 需要多个签名者签署才能完成交易。</li>
+<li><strong>安全:</strong> 提高了交易安全性，防止单个签名者控制交易。</li>
+<li><strong>应用:</strong> 常用于加密货币交易、数字资产管理等领域。</li>
+</ul>
+<p><strong>区别:</strong></p>
+<ul>
+<li>Multisig 主要用于控制交易执行，而不是秘密共享或签名。</li>
+<li>Multisig 的重点在于防止单个参与者控制交易，而不是保护秘密本身。</li>
+</ul>
+<h1 id="verifiable-secret-sharing-vss">Verifiable Secret Sharing (VSS)</h1>
+<p>是一种结合了秘密共享和可验证性特性的方案。它允许参与者验证他们收到的秘密份额是否正确，并确保秘密不会被恶意参与者篡改。</p>
+<p><strong>主要特点:</strong></p>
+<ul>
+<li><strong>可验证性:</strong> 参与者可以验证他们收到的秘密份额是否正确。</li>
+<li><strong>容错性:</strong> 即使部分参与者恶意行为，仍然可以恢复原始秘密。</li>
+<li><strong>应用:</strong> 常用于安全多方计算、分布式共识等领域。</li>
+</ul>
+<p><strong>区别:</strong></p>
+<ul>
+<li>VSS 既包含秘密共享功能，也包含可验证性功能，两者相结合。</li>
+<li>VSS 主要用于提高秘密共享方案的安全性，防止恶意行为。</li>
+</ul>
+<h1 id="reference">Reference</h1>
+<ul>
+<li>https://en.wikipedia.org/wiki/Shamir%27s_secret_sharing</li>
+<li>https://cryptonews.net/news/other/29241788/</li>
+<li>https://en.wikipedia.org/wiki/Threshold_cryptosystem</li>
+</ul>
+
+    
+    <div class="giscus"></div>
+    <script src="https://giscus.app/client.js"
+      data-repo="yinheli/yinheli.github.com"
+      data-repo-id="MDEwOlJlcG9zaXRvcnkzMTUzMzI5OQ=="
+      data-category="General"
+      data-category-id="DIC_kwDOAeEo884CUUss"
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="dark"
+      data-lang="zh-CN"
+      crossorigin="anonymous"
+      async>
+    </script>
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://yinheli.com/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://yinheli.com/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.body.classList;
+        const getSessionTheme = sessionStorage.getItem("theme");
+        if (getSessionTheme === "dark") {
+            cls.toggle("dark-mode", true);
+        } else if (getSessionTheme === "light") {
+            cls.toggle("dark-mode", false);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            cls.toggle("dark-mode", true);
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", true);
+            sessionStorage.setItem("theme", "dark");
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", false);
+            sessionStorage.setItem("theme", "light");
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>
