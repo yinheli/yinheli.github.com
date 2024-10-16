@@ -4,37 +4,15 @@
     "type": "split",
     "children": [
       {
-        "id": "217dcd0acfa91b7a",
+        "id": "e6d3a3ba6d8c9502",
         "type": "tabs",
         "children": [
           {
-            "id": "f0f054fa2652de11",
+            "id": "6b85a368a60caec5",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "content/blog/2024/web3-security-sss-tss-mpc-vss.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          }
-        ]
-      },
-      {
-        "id": "a7abaa5a0b331eff",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "634ee22132439005",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "content/blog/2024/ai-camp.md",
-                "mode": "source",
-                "source": false
-              }
+              "type": "empty",
+              "state": {}
             }
           }
         ]
@@ -122,7 +100,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "content/blog/2024/ai-camp.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -139,7 +116,6 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "content/blog/2024/ai-camp.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -150,9 +126,7 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {
-                "file": "content/blog/2024/ai-camp.md"
-              }
+              "state": {}
             }
           }
         ],
@@ -173,8 +147,9 @@
       "markdown-importer:Open format converter": false
     }
   },
-  "active": "634ee22132439005",
+  "active": "6b85a368a60caec5",
   "lastOpenFiles": [
+    "content/blog/2024/git-ssh-signing.md",
     "content/blog/2024/web3-security-sss-tss-mpc-vss.md",
     "content/blog/2024/ai-camp.md",
     "content/blog/2024/hunting-job-2024.md",
@@ -211,7 +186,6 @@
     "content/blog/2023/hello-world-hello-rust.md",
     "content/blog/2015/install-vmware-centos6-issue.md",
     "content/blog/2015/iptables-notes.md",
-    "content/blog/2015/mysql-import-export.md",
-    "content/blog/2017/_index.md"
+    "content/blog/2015/mysql-import-export.md"
   ]
 }
