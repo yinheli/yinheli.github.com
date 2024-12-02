@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="从程序员角度学习 Stable Diffusion">
+    <title>Henry | stable diffusion</title>
+    <link rel="stylesheet" href="https://yinheli.com/style.css?h=5c5abba3a670f76f59be" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+    
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-5647601-2');
+    </script>
+    
+    
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://yinheli.com/atom.xml">
+    
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;yinheli.com">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>stable diffusion</h1>
+    
+    <p class="secondary">7 October, 2022</p>
+    
+    <div class="space"></div>
+    <h1 id="kai-shi">开始</h1>
+<p>https://github.com/AUTOMATIC1111/stable-diffusion-webui
+https://github.com/comfyanonymous/ComfyUI</p>
+<h1 id="ru-men-xue-xi-kai-fa-zhe-jiao-du">入门学习（开发者角度）</h1>
+<ul>
+<li>huggingface 的公开课 https://github.com/huggingface/diffusion-models-class</li>
+<li>相对系统的总结了一些 sd-webui 的使用和基本概念 https://stable-diffusion-art.com/</li>
+</ul>
+<h1 id="ji-chu-mo-xing">基础模型</h1>
+<blockquote>
+<p>https://huggingface.co/runwayml/stable-diffusion-v1-5</p>
+</blockquote>
+<ul>
+<li><a href="https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.ckpt">v1-5-pruned-emaonly.ckpt</a> - 4.27GB, ema-only weight. uses less VRAM - suitable for inference
+<ul>
+<li>适合推理</li>
+</ul>
+</li>
+<li><a href="https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned.ckpt">v1-5-pruned.ckpt</a> - 7.7GB, ema+non-ema weights. uses more VRAM - suitable for fine-tuning
+<ul>
+<li>适合调优</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>更推荐下载 <code>safetensors</code> 格式</p>
+</blockquote>
+<h2 id="geng-duo-mo-xing">更多模型</h2>
+<ul>
+<li>C站 https://civitai.com/</li>
+<li>哩布哩布 https://www.liblib.ai/</li>
+</ul>
+
+    
+    <div class="giscus"></div>
+    <script src="https://giscus.app/client.js"
+      data-repo="yinheli/yinheli.github.com"
+      data-repo-id="MDEwOlJlcG9zaXRvcnkzMTUzMzI5OQ=="
+      data-category="General"
+      data-category-id="DIC_kwDOAeEo884CUUss"
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="dark"
+      data-lang="zh-CN"
+      crossorigin="anonymous"
+      async>
+    </script>
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://yinheli.com/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://yinheli.com/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.body.classList;
+        const getSessionTheme = sessionStorage.getItem("theme");
+        if (getSessionTheme === "dark") {
+            cls.toggle("dark-mode", true);
+        } else if (getSessionTheme === "light") {
+            cls.toggle("dark-mode", false);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            cls.toggle("dark-mode", true);
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", true);
+            sessionStorage.setItem("theme", "dark");
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", false);
+            sessionStorage.setItem("theme", "light");
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>

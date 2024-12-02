@@ -1,0 +1,1411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>Henry</title>
+    <subtitle>Develop notes</subtitle>
+    <link rel="self" type="application/atom+xml" href="https://yinheli.com/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://yinheli.com"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2024-12-02T00:00:00+00:00</updated>
+    <id>https://yinheli.com/atom.xml</id>
+    <entry xml:lang="en">
+        <title>shell 脚本中的 `trap` 命令</title>
+        <published>2024-12-02T00:00:00+00:00</published>
+        <updated>2024-12-02T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2024/trap/"/>
+        <id>https://yinheli.com/blog/2024/trap/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2024/trap/">&lt;p&gt;shell 脚本中有类似编程里的 defer, finally, register_shutdown_function 处理效果吗？有的，就是 &lt;code&gt;trap&lt;&#x2F;code&gt; 命令。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;1-shen-me-shi-trap&quot;&gt;1. 什么是 &lt;code&gt;trap&lt;&#x2F;code&gt;？&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;code&gt;trap&lt;&#x2F;code&gt; 是 Shell 提供的一个内置命令，用于捕获 UNIX 信号（Signals）或者特殊的运行时事件，并在触发时执行特定命令。它的基本用法如下：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;trap &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;commands&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt; signals
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;commands&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;：在捕获指定信号或事件时执行的一段命令。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;signals&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;：触发 &lt;code&gt;commands&lt;&#x2F;code&gt; 执行的信号列表，可以是信号名称（如 &lt;code&gt;EXIT&lt;&#x2F;code&gt; 或 &lt;code&gt;INT&lt;&#x2F;code&gt;）或信号编号（如 &lt;code&gt;15&lt;&#x2F;code&gt; 或 &lt;code&gt;2&lt;&#x2F;code&gt;）。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;通过 &lt;code&gt;trap&lt;&#x2F;code&gt; 命令，我们可以在脚本运行的期间甚至退出时，优雅地完成清理、日志记录以及错误处理等任务。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;2-chang-jian-xin-hao-yu-zuo-yong&quot;&gt;2. 常见信号与作用&lt;&#x2F;h2&gt;
+&lt;p&gt;在 UNIX 系统中，信号是用于与进程通信的机制。下表列出了常见信号以及它们的作用：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;信号名称&lt;&#x2F;th&gt;&lt;th&gt;信号编号&lt;&#x2F;th&gt;&lt;th&gt;描述&lt;&#x2F;th&gt;&lt;th&gt;触发方式&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;SIGHUP&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;1&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;挂起信号，通常在终端关闭时发送。&lt;&#x2F;td&gt;&lt;td&gt;关闭 SSH 会话或者挂起终端&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;SIGINT&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;2&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;中断信号，一般由用户按下 &lt;code&gt;Ctrl+C&lt;&#x2F;code&gt; 产生。&lt;&#x2F;td&gt;&lt;td&gt;用户主动中断&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;SIGQUIT&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;3&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;退出信号，通常由用户按下 &lt;code&gt;Ctrl+\&lt;&#x2F;code&gt; 产生，用于生成调试 core dump。&lt;&#x2F;td&gt;&lt;td&gt;强制退出&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;SIGTERM&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;15&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;终止信号，通常通过 &lt;code&gt;kill&lt;&#x2F;code&gt; 命令发送，表示希望优雅终止。&lt;&#x2F;td&gt;&lt;td&gt;执行 &lt;code&gt;kill PID&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;SIGKILL&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;9&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;强制终止信号，无法被捕获，是一个直接杀死进程的信号。&lt;&#x2F;td&gt;&lt;td&gt;执行 &lt;code&gt;kill -9 PID&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;SIGSTOP&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;19&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;暂停信号，无法被捕获或忽略，用于暂停进程。&lt;&#x2F;td&gt;&lt;td&gt;暂停的快捷方式&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;EXIT&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;-&lt;&#x2F;td&gt;&lt;td&gt;在脚本退出时触发（无论正常还是错误）。&lt;&#x2F;td&gt;&lt;td&gt;脚本执行完成或者使用 &lt;code&gt;exit&lt;&#x2F;code&gt; 语句&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;blockquote&gt;
+&lt;p&gt;你可以通过 &lt;code&gt;kill -l&lt;&#x2F;code&gt; 查看当前系统支持的完整信号列表。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;3-ji-ben-yong-fa&quot;&gt;3. 基本用法&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;shi-li-1-qing-li-lin-shi-wen-jian&quot;&gt;示例 1：清理临时文件&lt;&#x2F;h3&gt;
+&lt;p&gt;当脚本中需要执行一些中间操作时，可能会产生临时文件。如果用户中途中断脚本，这些临时文件可能会遗留在文件系统中。例如：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;#!&#x2F;bin&#x2F;bash
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;temp_file=&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;&amp;quot;&#x2F;tmp&#x2F;my_temp_file&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;trap &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;rm -f $&lt;&#x2F;span&gt;&lt;span&gt;temp_file&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;; echo &amp;#39;临时文件已清理&amp;#39;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt; EXIT
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 模拟创建临时文件并操作
+&lt;&#x2F;span&gt;&lt;span&gt;touch $temp_file
+&lt;&#x2F;span&gt;&lt;span&gt;echo &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;处理中...&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;sleep 5
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 脚本结束后，自动触发清理
+&lt;&#x2F;span&gt;&lt;span&gt;echo &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;执行完成。&amp;quot;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;运行后，无论脚本是成功执行还是中途退出（如被 &lt;code&gt;Ctrl+C&lt;&#x2F;code&gt; 中断），&lt;code&gt;trap&lt;&#x2F;code&gt; 都会捕获 &lt;code&gt;EXIT&lt;&#x2F;code&gt; 信号，执行清理命令 &lt;code&gt;rm -f $temp_file&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;shi-li-2-bu-huo-yong-hu-zhong-duan-xin-hao-sigint&quot;&gt;示例 2：捕获用户中断信号 (&lt;code&gt;SIGINT&lt;&#x2F;code&gt;)&lt;&#x2F;h3&gt;
+&lt;p&gt;有时候我们希望让用户按下 &lt;code&gt;Ctrl+C&lt;&#x2F;code&gt; 时，脚本能优雅退出，而非直接中止。例如：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;#!&#x2F;bin&#x2F;bash
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;trap &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;echo &amp;#39;优雅退出中...&amp;#39;; cleanup; exit&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt; SIGINT
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;cleanup() {
+&lt;&#x2F;span&gt;&lt;span&gt;    echo &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;正在清理资源...&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;echo &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;运行脚本，按 Ctrl+C 中断。&amp;quot;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;while &lt;&#x2F;span&gt;&lt;span&gt;true&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;; do
+&lt;&#x2F;span&gt;&lt;span&gt;    sleep 1
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;done
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;在脚本中，用户按下 &lt;code&gt;Ctrl+C&lt;&#x2F;code&gt; 会发送 &lt;code&gt;SIGINT&lt;&#x2F;code&gt; 信号。通过 &lt;code&gt;trap&lt;&#x2F;code&gt;，可以拦截该信号并优雅退出，同时完成清理操作。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;shi-li-3-cuo-wu-chu-li-err-xin-hao&quot;&gt;示例 3：错误处理 (&lt;code&gt;ERR&lt;&#x2F;code&gt; 信号)&lt;&#x2F;h3&gt;
+&lt;p&gt;在 Shell 脚本中，如果某个命令失败，往往需要及时处理或终止脚本以避免影响后续操作。通过 &lt;code&gt;trap&lt;&#x2F;code&gt; 捕获 &lt;code&gt;ERR&lt;&#x2F;code&gt; 信号，可以实现全局错误处理：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;#!&#x2F;bin&#x2F;bash
+&lt;&#x2F;span&gt;&lt;span&gt;set -e  &lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 任何命令失败时立即退出
+&lt;&#x2F;span&gt;&lt;span&gt;trap &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;echo &amp;#39;发生错误，终止脚本&amp;#39;; cleanup; exit 1&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt; ERR
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;cleanup() {
+&lt;&#x2F;span&gt;&lt;span&gt;    echo &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;清理完成。&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 模拟正常命令
+&lt;&#x2F;span&gt;&lt;span&gt;echo &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;开始执行脚本...&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;ls &#x2F;nonexistent_folder  &lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 强制触发错误
+&lt;&#x2F;span&gt;&lt;span&gt;echo &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;这条命令不会被执行。&amp;quot;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;当某条命令（如 &lt;code&gt;ls &#x2F;nonexistent_folder&lt;&#x2F;code&gt;）出错时，会触发 &lt;code&gt;ERR&lt;&#x2F;code&gt; 信号，调用 &lt;code&gt;cleanup&lt;&#x2F;code&gt; 函数清理资源并退出脚本。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;4-gao-ji-yong-fa&quot;&gt;4. 高级用法&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;bu-huo-duo-ge-xin-hao&quot;&gt;捕获多个信号&lt;&#x2F;h3&gt;
+&lt;p&gt;你可以通过 &lt;code&gt;trap&lt;&#x2F;code&gt; 同时捕获多个信号，并为它们定义相同的行为：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;trap &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;echo &amp;#39;收到信号，正在优雅退出...&amp;#39;; exit&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt; SIGINT SIGTERM
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;无论是按下 &lt;code&gt;Ctrl+C&lt;&#x2F;code&gt;（触发 &lt;code&gt;SIGINT&lt;&#x2F;code&gt;）还是通过 &lt;code&gt;kill&lt;&#x2F;code&gt; 命令（触发 &lt;code&gt;SIGTERM&lt;&#x2F;code&gt;），都会执行同样的命令。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;hu-lue-mou-xie-xin-hao&quot;&gt;忽略某些信号&lt;&#x2F;h3&gt;
+&lt;p&gt;如果希望某些信号不影响脚本运行，可以让 &lt;code&gt;trap&lt;&#x2F;code&gt; 执行空操作：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;trap &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt; SIGINT SIGTERM
+&lt;&#x2F;span&gt;&lt;span&gt;echo &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;信号被忽略，按 Ctrl+C 无法中断脚本。&amp;quot;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;while &lt;&#x2F;span&gt;&lt;span&gt;true&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;; do
+&lt;&#x2F;span&gt;&lt;span&gt;    sleep 1
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;done
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;需要注意的是，部分信号（例如 &lt;code&gt;SIGKILL&lt;&#x2F;code&gt; 和 &lt;code&gt;SIGSTOP&lt;&#x2F;code&gt;）无法被忽略或捕获。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;diao-shi-jiao-ben-liu-debug-xin-hao&quot;&gt;调试脚本流（&lt;code&gt;DEBUG&lt;&#x2F;code&gt; 信号）&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;code&gt;trap&lt;&#x2F;code&gt; 的 &lt;code&gt;DEBUG&lt;&#x2F;code&gt; 信号使你可以在脚本执行每条命令之前插入调试信息，非常适用于调试复杂脚本。&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;trap &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;echo &amp;quot;正在执行命令：$BASH_COMMAND&amp;quot;&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt; DEBUG
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;echo &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;执行第一步&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;ls &#x2F;nonexistent_file &lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 触发错误
+&lt;&#x2F;span&gt;&lt;span&gt;echo &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;执行下一步&amp;quot;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;当脚本运行时，每条命令（包括未定义的或出错的命令）都会在执行前打印到屏幕上，便于跟踪脚本行为。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;bu-huo-han-shu-de-fan-hui-zhuang-tai-return-xin-hao&quot;&gt;捕获函数的返回状态（&lt;code&gt;RETURN&lt;&#x2F;code&gt; 信号）&lt;&#x2F;h3&gt;
+&lt;p&gt;当 Shell 函数返回时，可以通过捕获 &lt;code&gt;RETURN&lt;&#x2F;code&gt; 信号执行额外逻辑，例如记录函数的返回值或完成特定清理操作。&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;trap &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;echo &amp;quot;函数返回了。&amp;quot;&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt; RETURN
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;test_function() {
+&lt;&#x2F;span&gt;&lt;span&gt;    echo &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;正在执行函数任务...&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;test_function
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;5-qian-zai-wen-ti-yu-zhu-yi-shi-xiang&quot;&gt;5. 潜在问题与注意事项&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;部分信号无法捕获&lt;&#x2F;strong&gt;：&lt;code&gt;SIGKILL&lt;&#x2F;code&gt; 和 &lt;code&gt;SIGSTOP&lt;&#x2F;code&gt; 是特殊信号，无法被 &lt;code&gt;trap&lt;&#x2F;code&gt; 捕获或阻止。这是 UNIX 系统的设计策略，无法绕过。&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;并发信号处理&lt;&#x2F;strong&gt;：当多个信号几乎同时触发时，Shell 可能会按顺序依次处理它们，但这可能引发意外行为，建议测试关键脚本。&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;复杂命令需注意转义&lt;&#x2F;strong&gt;：&lt;code&gt;trap&lt;&#x2F;code&gt; 中的命令如果包含 &lt;code&gt;$&lt;&#x2F;code&gt;、&lt;code&gt;&amp;quot;&lt;&#x2F;code&gt; 等特殊字符，可能需要正确转义。例如：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;trap &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;echo &amp;quot;命令失败: $BASH_COMMAND&amp;quot;&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt; ERR
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;6-zong-jie&quot;&gt;6. 总结&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;code&gt;trap&lt;&#x2F;code&gt; 是 Shell 脚本中功能强大且不可或缺的工具。无论是资源清理、安全退出、错误处理还是调试跟踪，它都能为我们的脚本带来极大的灵活性与可靠性。&lt;&#x2F;p&gt;
+&lt;p&gt;通过结合信号特性与实际需求，合理设计脚本中的信号处理逻辑，可以避免意外问题的发生，提升脚本的健壮性和安全性。&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>web3 几个安全相关名词</title>
+        <published>2024-06-19T00:00:00+00:00</published>
+        <updated>2024-06-19T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2024/web3-security-sss-tss-mpc-vss/"/>
+        <id>https://yinheli.com/blog/2024/web3-security-sss-tss-mpc-vss/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2024/web3-security-sss-tss-mpc-vss/">&lt;h1 id=&quot;shamir-s-secret-sharing-sss&quot;&gt;Shamir&#x27;s secret sharing (SSS)&lt;&#x2F;h1&gt;
+&lt;p&gt;是一种基于多项式插值的秘密共享方案。它将秘密信息分割成多个部分，每个部分称为“秘密份额”。只有收集到足够数量的秘密份额，才能使用多项式插值方法还原原始秘密。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;主要特点:&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;阈值方案:&lt;&#x2F;strong&gt; 需要达到一定的阈值数量（k）的秘密份额才能恢复秘密。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;灵活:&lt;&#x2F;strong&gt; 可以根据需要调整阈值数量，以控制恢复秘密的难易程度。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;安全:&lt;&#x2F;strong&gt; 即使部分秘密份额丢失或泄露，也不会影响秘密的安全性。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;区别:&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;SSS 主要用于秘密信息的共享和恢复，重点在于保护秘密本身。&lt;&#x2F;li&gt;
+&lt;li&gt;SSS 不涉及签名或验证的功能。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h1 id=&quot;threshold-signature-schemes-tss&quot;&gt;Threshold Signature Schemes (TSS)&lt;&#x2F;h1&gt;
+&lt;p&gt; 是一种分布式签名方案，它将签名权力分散到多个参与者中，需要满足一定的阈值条件才能生成有效的签名。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;主要特点:&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;分布式签名:&lt;&#x2F;strong&gt; 签名权力分散在多个参与者中，而不是集中在单个实体。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;阈值要求:&lt;&#x2F;strong&gt; 需要达到一定的阈值数量的参与者才能生成有效的签名。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;安全:&lt;&#x2F;strong&gt; 防止单个参与者控制签名权力，提高了签名方案的安全性。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;区别:&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;TSS 主要用于生成和验证签名，而不是秘密共享。&lt;&#x2F;li&gt;
+&lt;li&gt;TSS 的重点在于控制签名权力，而不是保护秘密本身。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h1 id=&quot;multi-party-computation-mpc&quot;&gt;Multi-Party Computation (MPC)&lt;&#x2F;h1&gt;
+&lt;p&gt;是一种允许多个参与者合作进行计算，而无需向彼此公开其私有输入信息的协议。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;主要特点:&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;隐私保护:&lt;&#x2F;strong&gt; 参与者可以进行联合计算，同时保护其私有输入信息的隐私。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;安全:&lt;&#x2F;strong&gt; 即使一些参与者恶意行为，也不会影响计算结果的正确性。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;广泛应用:&lt;&#x2F;strong&gt; 应用于多个领域，包括加密货币、隐私保护计算、安全多方计算等。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;区别:&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;MPC 的重点在于进行安全的联合计算，而不是秘密共享或签名。&lt;&#x2F;li&gt;
+&lt;li&gt;MPC 适用于各种类型的计算，而不仅仅是秘密共享或签名。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h1 id=&quot;multi-signature-multisig&quot;&gt;Multi-Signature (Multisig)&lt;&#x2F;h1&gt;
+&lt;p&gt;是一种需要多个签名才能完成交易的机制。它通常用于提高交易安全性，防止单个签名者的恶意行为。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;主要特点:&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;多重签名要求:&lt;&#x2F;strong&gt; 需要多个签名者签署才能完成交易。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;安全:&lt;&#x2F;strong&gt; 提高了交易安全性，防止单个签名者控制交易。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;应用:&lt;&#x2F;strong&gt; 常用于加密货币交易、数字资产管理等领域。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;区别:&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Multisig 主要用于控制交易执行，而不是秘密共享或签名。&lt;&#x2F;li&gt;
+&lt;li&gt;Multisig 的重点在于防止单个参与者控制交易，而不是保护秘密本身。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h1 id=&quot;verifiable-secret-sharing-vss&quot;&gt;Verifiable Secret Sharing (VSS)&lt;&#x2F;h1&gt;
+&lt;p&gt;是一种结合了秘密共享和可验证性特性的方案。它允许参与者验证他们收到的秘密份额是否正确，并确保秘密不会被恶意参与者篡改。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;主要特点:&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;可验证性:&lt;&#x2F;strong&gt; 参与者可以验证他们收到的秘密份额是否正确。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;容错性:&lt;&#x2F;strong&gt; 即使部分参与者恶意行为，仍然可以恢复原始秘密。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;应用:&lt;&#x2F;strong&gt; 常用于安全多方计算、分布式共识等领域。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;区别:&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;VSS 既包含秘密共享功能，也包含可验证性功能，两者相结合。&lt;&#x2F;li&gt;
+&lt;li&gt;VSS 主要用于提高秘密共享方案的安全性，防止恶意行为。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h1 id=&quot;reference&quot;&gt;Reference&lt;&#x2F;h1&gt;
+&lt;ul&gt;
+&lt;li&gt;https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Shamir%27s_secret_sharing&lt;&#x2F;li&gt;
+&lt;li&gt;https:&#x2F;&#x2F;cryptonews.net&#x2F;news&#x2F;other&#x2F;29241788&#x2F;&lt;&#x2F;li&gt;
+&lt;li&gt;https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Threshold_cryptosystem&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>ucloud CDN 日志解析</title>
+        <published>2024-04-20T00:00:00+00:00</published>
+        <updated>2024-04-20T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2024/ucloud-cdn-log-parser/"/>
+        <id>https://yinheli.com/blog/2024/ucloud-cdn-log-parser/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2024/ucloud-cdn-log-parser/">&lt;p&gt;前几天遇到 ucloud CDN 服务的带宽报警，而他们的后台对流量分析这块太弱了，于是看了下文档对照写了个&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;yinheli&#x2F;ucloud-cdn-log-parser&quot;&gt;日志解析&lt;&#x2F;a&gt;，主要是练手 rust，又有一年多没有做 rust 的项目了。&lt;&#x2F;p&gt;
+&lt;p&gt;这个工具只是简单的用正则对日志文件做了解析，具体的分析需要再配合其他工具处理，我这里比较推荐使用 duckdb 或者 clickhouse (local)。将数据解析转换为 parquet 后压缩率很高。&lt;&#x2F;p&gt;
+&lt;p&gt;顺便发现 duckdb 的 csv&#x2F;tsv 数据导入 parquet 比 clickhouse 支持的更好，感觉数据类型的推理更智能。&lt;&#x2F;p&gt;
+&lt;p&gt;具体使用姿势参考项目的 &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;yinheli&#x2F;ucloud-cdn-log-parser?tab=readme-ov-file#usage&quot;&gt;readme&lt;&#x2F;a&gt; 。&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>用抢占式节点做视频转码</title>
+        <published>2024-04-01T00:00:00+00:00</published>
+        <updated>2024-04-01T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2024/transcode-with-spot/"/>
+        <id>https://yinheli.com/blog/2024/transcode-with-spot/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2024/transcode-with-spot/">&lt;p&gt;最近有一批阿里云OSS存储的视频要做视频转码，量比较大，有2千多万个视频视频文件，平均时长 17s 左右。我们需要转出多个版本 &amp;amp; 水印这样转码时长就成倍增加，如果用阿里云的转码服务，叠加折扣券，预算下来要40多万，最后自己写了个服务，用 ACK + 抢占式 ECI，不到总花费不到一万，省了一大笔。&lt;&#x2F;p&gt;
+&lt;p&gt;推荐 ecs.hfc6.large 机型，起初用的 ecs.c6.large 后来发现 hfc6 不仅有 5%~7%左右性能提升，价格却还能节省 62% ，当然抢占式机型的价格是浮动的，不过短期内浮动不是很大。&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>postgresql 大版本升级</title>
+        <published>2023-12-22T00:00:00+00:00</published>
+        <updated>2023-12-22T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2023/postgresql-upgrade/"/>
+        <id>https://yinheli.com/blog/2023/postgresql-upgrade/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2023/postgresql-upgrade/">&lt;p&gt;gitea 的 helm 升级连带升级了 postgresql , postgresql 的大版本升级比较麻烦，这里记录下。&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;首先把老的版本数据文件夹备份&lt;&#x2F;li&gt;
+&lt;li&gt;老的 bin 文件夹备份&lt;&#x2F;li&gt;
+&lt;li&gt;然后通过 &lt;code&gt;pg_upgrade&lt;&#x2F;code&gt; 来升级&lt;&#x2F;li&gt;
+&lt;li&gt;拷贝一个老的或者新的 pod 的 yaml 配置，并且设置为 root 用户启动，command 改为 &lt;code&gt;tail -f &#x2F;dev&#x2F;null&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;以上都做完，可以停掉老的服务，用以上备份的 k8s  pod yaml 改为新版本镜像，挂载老的数据盘，启动一个实例&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 创建 postgres 用户
+&lt;&#x2F;span&gt;&lt;span&gt;adduser --uid 1001 postgres
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 老版本bin &#x2F;bitnami&#x2F;postgresql&#x2F;oldbin
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 老版本data &#x2F;bitnami&#x2F;postgresql&#x2F;olddata
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;mkdir &#x2F;bitnami&#x2F;postgresql&#x2F;data
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;su postgres
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 初始化
+&lt;&#x2F;span&gt;&lt;span&gt;initdb -E UTF8 -U postgres -D &#x2F;bitnami&#x2F;postgresql&#x2F;data
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 升级
+&lt;&#x2F;span&gt;&lt;span&gt;pg_upgrade -b &#x2F;bitnami&#x2F;postgresql&#x2F;oldbin -B &#x2F;opt&#x2F;bitnami&#x2F;postgresql&#x2F;bin -d &#x2F;bitnami&#x2F;postgresql&#x2F;olddata -D &#x2F;bitnami&#x2F;postgresql&#x2F;data
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;如果此前的老版本没有正常退出，报错&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot;&gt;&lt;code&gt;&lt;span&gt;The source cluster was not shut down cleanly
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;可以用老的 bin 重新启动关闭一下，确保它是正常的退出，然后在尝试执行上面的升级操作&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&#x2F;bitnami&#x2F;postgresql&#x2F;oldbin&#x2F;pg_ctl start -w -D &#x2F;bitnami&#x2F;postgresql&#x2F;olddata
+&lt;&#x2F;span&gt;&lt;span&gt;&#x2F;bitnami&#x2F;postgresql&#x2F;oldbin&#x2F;pg_ctl stop -s -m fast -D &#x2F;bitnami&#x2F;postgresql&#x2F;olddata
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;can-kao-zi-liao&quot;&gt;参考资料&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;https:&#x2F;&#x2F;github.com&#x2F;bitnami&#x2F;charts&#x2F;issues&#x2F;8025&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>本地运行 loki 查询</title>
+        <published>2023-12-12T00:00:00+00:00</published>
+        <updated>2023-12-12T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2023/loki-local/"/>
+        <id>https://yinheli.com/blog/2023/loki-local/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2023/loki-local/">&lt;p&gt;loki 的 &lt;a href=&quot;https:&#x2F;&#x2F;grafana.com&#x2F;docs&#x2F;loki&#x2F;latest&#x2F;query&#x2F;&quot;&gt;LogQL&lt;&#x2F;a&gt; 使用体验还是很好的，一方面能过滤查询，另一方面还能看到日志的趋势。&lt;&#x2F;p&gt;
+&lt;p&gt;我的场景是要临时分析 CDN 的某个域名的日志&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;zhun-bei-docker-compose-yun-xing-huan-jing&quot;&gt;准备 docker compose 运行环境&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;vi loki.yaml
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;pre data-lang=&quot;yaml&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-yaml &quot;&gt;&lt;code class=&quot;language-yaml&quot; data-lang=&quot;yaml&quot;&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;auth_enabled&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;false
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;server&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;http_listen_port&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;3100
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;grpc_server_max_recv_msg_size&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;41943040
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;grpc_server_max_send_msg_size&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;41943040
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;common&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;path_prefix&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;&#x2F;loki&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;storage&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;filesystem&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;      &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;chunks_directory&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;&#x2F;loki&#x2F;chunks&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;      &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;rules_directory&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;&#x2F;loki&#x2F;rules&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;replication_factor&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;1
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;ring&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;kvstore&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;      &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;store&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;inmemory&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;schema_config&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;configs&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;    - &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;from&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b4cea8;&quot;&gt;2020-10-24
+&lt;&#x2F;span&gt;&lt;span&gt;      &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;store&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;boltdb-shipper&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;      &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;object_store&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;filesystem&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;      &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;schema&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;v11&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;      &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;index&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;prefix&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;index_&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;period&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;24h&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;limits_config&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;reject_old_samples&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;false
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;ingestion_rate_mb&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;1024
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;per_stream_rate_limit&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;512MB&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;vi docker-compose.yaml
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;pre data-lang=&quot;yaml&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-yaml &quot;&gt;&lt;code class=&quot;language-yaml&quot; data-lang=&quot;yaml&quot;&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;version&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;3&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;services&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;loki&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;image&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;docker.mirrors.sjtug.sjtu.edu.cn&#x2F;grafana&#x2F;loki&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;user&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;root&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;volumes&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;      - &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;&#x2F;data&#x2F;loki:&#x2F;loki&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;      - &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;.&#x2F;loki.yaml:&#x2F;etc&#x2F;loki&#x2F;local-config.yaml&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;ports&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;      - &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;3100:3100&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;grafana&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;image&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;docker.mirrors.sjtug.sjtu.edu.cn&#x2F;grafana&#x2F;grafana&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;ports&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;      - &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;3000:3000&amp;quot;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;dao-ru-ri-zhi&quot;&gt;导入日志&lt;&#x2F;h2&gt;
+&lt;p&gt;可以用 promtail 或者如果数据有自己的预处理需求，就直接写个脚本，我这里写的 python 脚本来处理&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;python&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-python &quot;&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span style=&quot;color:#9b9b9b;&quot;&gt;import &lt;&#x2F;span&gt;&lt;span&gt;gzip
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#9b9b9b;&quot;&gt;import &lt;&#x2F;span&gt;&lt;span&gt;json
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#9b9b9b;&quot;&gt;import &lt;&#x2F;span&gt;&lt;span&gt;os
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#9b9b9b;&quot;&gt;import &lt;&#x2F;span&gt;&lt;span&gt;httpx
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# https:&#x2F;&#x2F;console.bce.baidu.com&#x2F;cdn&#x2F;#&#x2F;cdn&#x2F;customlog
+&lt;&#x2F;span&gt;&lt;span&gt;fields = &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;remote_addr remote_ip remote_port jvip time_local scheme host format_time request status bytes_sent body_bytes_sent sent_http_content_length http_content_length request_time request_time_ms connection udf_hit http_range http_referer http_cookie http_user_agent http_x_forwarded_for ssl_protocol sent_http_content_type sent_http_content_range server_protocol http_accept log_level req_len url request_method uri http_ver log_timestamp_ms log_timestamp_s&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;.split(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39; &amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;)
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;def &lt;&#x2F;span&gt;&lt;span&gt;iter_log(batch=&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;1000&lt;&#x2F;span&gt;&lt;span&gt;):
+&lt;&#x2F;span&gt;&lt;span&gt;    items = []
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# list dir gzip iter all gz files
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;file &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;in &lt;&#x2F;span&gt;&lt;span&gt;sorted(os.listdir(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;.&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;)):
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;if &lt;&#x2F;span&gt;&lt;span&gt;file.endswith(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;.gz&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;):
+&lt;&#x2F;span&gt;&lt;span&gt;            &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;with &lt;&#x2F;span&gt;&lt;span&gt;gzip.open(file, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;rt&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;) &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;as &lt;&#x2F;span&gt;&lt;span&gt;f:
+&lt;&#x2F;span&gt;&lt;span&gt;                &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;line &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;in &lt;&#x2F;span&gt;&lt;span&gt;f:
+&lt;&#x2F;span&gt;&lt;span&gt;                    line = line.strip()
+&lt;&#x2F;span&gt;&lt;span&gt;                    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;if not &lt;&#x2F;span&gt;&lt;span&gt;line:
+&lt;&#x2F;span&gt;&lt;span&gt;                        &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;continue
+&lt;&#x2F;span&gt;&lt;span&gt;                    line = line.split(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#e3bbab;&quot;&gt;\t&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;)
+&lt;&#x2F;span&gt;&lt;span&gt;                    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;if &lt;&#x2F;span&gt;&lt;span&gt;len(line) != len(fields):
+&lt;&#x2F;span&gt;&lt;span&gt;                        &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;continue
+&lt;&#x2F;span&gt;&lt;span&gt;                    item = dict(zip(fields, line))
+&lt;&#x2F;span&gt;&lt;span&gt;                    items.append([str(int(item[&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;log_timestamp_ms&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;]) * &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;1000000&lt;&#x2F;span&gt;&lt;span&gt;), json.dumps(item, ensure_ascii=&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;False&lt;&#x2F;span&gt;&lt;span&gt;)])
+&lt;&#x2F;span&gt;&lt;span&gt;                    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;if &lt;&#x2F;span&gt;&lt;span&gt;len(items) == batch:
+&lt;&#x2F;span&gt;&lt;span&gt;                        &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;yield &lt;&#x2F;span&gt;&lt;span&gt;items
+&lt;&#x2F;span&gt;&lt;span&gt;                        items = []
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;if &lt;&#x2F;span&gt;&lt;span&gt;items:
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;yield &lt;&#x2F;span&gt;&lt;span&gt;items
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# https:&#x2F;&#x2F;grafana.com&#x2F;docs&#x2F;loki&#x2F;latest&#x2F;reference&#x2F;api&#x2F;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;items &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;in &lt;&#x2F;span&gt;&lt;span&gt;iter_log(batch=&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;1000&lt;&#x2F;span&gt;&lt;span&gt;):
+&lt;&#x2F;span&gt;&lt;span&gt;    data = {
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;streams&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;: [
+&lt;&#x2F;span&gt;&lt;span&gt;            {
+&lt;&#x2F;span&gt;&lt;span&gt;                &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;stream&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;: {
+&lt;&#x2F;span&gt;&lt;span&gt;                    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;cdn&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;baidu&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;                },
+&lt;&#x2F;span&gt;&lt;span&gt;                &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;values&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;: items
+&lt;&#x2F;span&gt;&lt;span&gt;            }
+&lt;&#x2F;span&gt;&lt;span&gt;        ]
+&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span&gt;    r = httpx.post(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;http:&#x2F;&#x2F;127.0.0.1:3100&#x2F;loki&#x2F;api&#x2F;v1&#x2F;push&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;, json=data)
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;if &lt;&#x2F;span&gt;&lt;span&gt;r.status_code != &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;204&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;        print(r.status_code, r.text)
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>pytorch 镜像</title>
+        <published>2023-08-08T00:00:00+00:00</published>
+        <updated>2023-08-08T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2023/pytorch-mirror/"/>
+        <id>https://yinheli.com/blog/2023/pytorch-mirror/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2023/pytorch-mirror/">&lt;p&gt;pytorch 仅有一个 wheels 下载站 https:&#x2F;&#x2F;download.pytorch.org&#x2F;whl ,当然 pip 是可以识别 &lt;code&gt;find-links&lt;&#x2F;code&gt; 类型的，但是在国内的网络环境下，下载却非常慢，尝试用上海交大的镜像，能临时解决问题，不过我们要在项目中构建 Docker 镜像，还是用免费的 nexus 私服构建代理比较合适。&lt;&#x2F;p&gt;
+&lt;p&gt;而 nexus 私服的 pypi 只支持代理 pypi 的上游，不支持 &lt;code&gt;find-links&lt;&#x2F;code&gt; 规范，故曲线救国，先手动把 whl 包下载下来，再用 &lt;code&gt;twine&lt;&#x2F;code&gt; 上传&#x2F;发布到私服。&lt;&#x2F;p&gt;
+&lt;p&gt;先到华中科大的&lt;a href=&quot;https:&#x2F;&#x2F;mirror.sjtu.edu.cn&#x2F;pytorch-wheels&#x2F;cu118&#x2F;?mirror_intel_list&quot;&gt;镜像站&lt;&#x2F;a&gt;下载需要的 whl 包 , 留意下载地址的那个参数，必传否则跳转到官方，可能机器学习大热华中科大的流量也是比较惊人吧。&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;在浏览器的 console 执行下面脚本，拷贝所有 linux 的发行包（按照你的需要调整） ```&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;pre data-lang=&quot;js&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-js &quot;&gt;&lt;code class=&quot;language-js&quot; data-lang=&quot;js&quot;&gt;&lt;span&gt;copy($$(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;a&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;).map(it&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;=&amp;gt;&lt;&#x2F;span&gt;&lt;span&gt;it.href).filter(it&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;=&amp;gt;&lt;&#x2F;span&gt;&lt;span&gt;it.indexOf(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;linux&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;)&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;&amp;gt;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;).join(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#e3bbab;&quot;&gt;\n&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;))
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ol start=&quot;2&quot;&gt;
+&lt;li&gt;配置 &lt;code&gt;~&#x2F;.pypirc&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;pre data-lang=&quot;ini&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-ini &quot;&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;[distutils]
+&lt;&#x2F;span&gt;&lt;span&gt;index-servers &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;=
+&lt;&#x2F;span&gt;&lt;span&gt;    nexus-torch-cu118
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;[nexus-torch-cu118]
+&lt;&#x2F;span&gt;&lt;span&gt;repository &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b4cea8;&quot;&gt;https:&#x2F;&#x2F;nexus-server&#x2F;repository&#x2F;pytorch-cu118&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;&#x2F;
+&lt;&#x2F;span&gt;&lt;span&gt;username &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; user
+&lt;&#x2F;span&gt;&lt;span&gt;password &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; pass
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ol start=&quot;3&quot;&gt;
+&lt;li&gt;安装好 &lt;code&gt;twine&lt;&#x2F;code&gt; ，挨个包执行上传&#x2F;发布&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;twine upload --repository nexus-torch-cu118 torch-2.0.0+cu118-cp39-cp39-linux_x86_64.whl
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ol start=&quot;4&quot;&gt;
+&lt;li&gt;记得在 pypi group 里加上发布的那个 self-host 仓库&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>nginx url decode issue</title>
+        <published>2023-02-07T00:00:00+00:00</published>
+        <updated>2023-02-07T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2023/nginx-url-decode-issue/"/>
+        <id>https://yinheli.com/blog/2023/nginx-url-decode-issue/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2023/nginx-url-decode-issue/">&lt;p&gt;公司的 bitbucket 已使用多年，最近计划升级，主要期望解决 nextjs 项目中文件名带有括号时 bitbucket 无法在 web 端查看代码的问题，发现升级完成后问题依旧，而相同版本，本地实验环境则没有发现这个问题，突然想到是不是中间代理层的问题，直连后 bitbucket (tomcat) 服务后发现果然没有这个问题，没想到困扰了这么久的问题居然是 nginx 导致的……&lt;&#x2F;p&gt;
+&lt;p&gt;尝试了多种方式，包括 rewrite 等，&lt;code&gt;proxy_pass&lt;&#x2F;code&gt; 依旧转发的内容会先做 url decode，这导致了后端server无法处理，最后本想用 lua 来试试，不过代理网关那边是 &lt;code&gt;apt&lt;&#x2F;code&gt; 直接安装的 nginx，改为 openresty 改动还有点大，遂试试 apt 安装 &lt;a href=&quot;https:&#x2F;&#x2F;nginx.org&#x2F;en&#x2F;docs&#x2F;njs&#x2F;install.html&quot;&gt;&lt;code&gt;nginx-module-njs&lt;&#x2F;code&gt;&lt;&#x2F;a&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;修改 nginx.conf, 添加 &lt;code&gt;ngx_http_js_module&lt;&#x2F;code&gt; 加载&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;conf&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-conf &quot;&gt;&lt;code class=&quot;language-conf&quot; data-lang=&quot;conf&quot;&gt;&lt;span&gt;load_module &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;&#x2F;&lt;&#x2F;span&gt;&lt;span&gt;usr&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;&#x2F;&lt;&#x2F;span&gt;&lt;span&gt;lib&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;&#x2F;&lt;&#x2F;span&gt;&lt;span&gt;nginx&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;&#x2F;&lt;&#x2F;span&gt;&lt;span&gt;modules&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;&#x2F;&lt;&#x2F;span&gt;&lt;span&gt;ngx_http_js_module&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;.&lt;&#x2F;span&gt;&lt;span&gt;so;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;修改有关 bitbucket 段的反向代理配置，导入 git.js，用 auth_request 每次请求都执行 &lt;code&gt;&#x2F;urlencode&lt;&#x2F;code&gt; 块 &lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;conf&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-conf &quot;&gt;&lt;code class=&quot;language-conf&quot; data-lang=&quot;conf&quot;&gt;&lt;span&gt;js_import &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;&#x2F;&lt;&#x2F;span&gt;&lt;span&gt;etc&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;&#x2F;&lt;&#x2F;span&gt;&lt;span&gt;nginx&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;&#x2F;&lt;&#x2F;span&gt;&lt;span&gt;conf&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;.&lt;&#x2F;span&gt;&lt;span&gt;d&#x2F;git.js;
+&lt;&#x2F;span&gt;&lt;span&gt;js_set $plain_uri &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;empty&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;location ^~ &#x2F;&lt;&#x2F;span&gt;&lt;span&gt; {
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# ...
+&lt;&#x2F;span&gt;&lt;span&gt;  auth_request &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;&#x2F;&lt;&#x2F;span&gt;&lt;span&gt;urlencode;
+&lt;&#x2F;span&gt;&lt;span&gt;  proxy_pass &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b4cea8;&quot;&gt;http:&#x2F;&#x2F;10.180.9.229:7990$plain_uri&lt;&#x2F;span&gt;&lt;span&gt;;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;location &#x2F;&lt;&#x2F;span&gt;&lt;span&gt;urlencode {
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;  internal&lt;&#x2F;span&gt;&lt;span&gt;;
+&lt;&#x2F;span&gt;&lt;span&gt;  js_content git&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;.&lt;&#x2F;span&gt;&lt;span&gt;urlencode;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;其中 &lt;code&gt;git.js&lt;&#x2F;code&gt; 如下&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;这里没有用 &lt;code&gt;replaceAll&lt;&#x2F;code&gt; 是因为在 &lt;code&gt;njs&lt;&#x2F;code&gt; 中并不支持&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;pre data-lang=&quot;js&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-js &quot;&gt;&lt;code class=&quot;language-js&quot; data-lang=&quot;js&quot;&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;function &lt;&#x2F;span&gt;&lt;span&gt;urlencode(r){
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;let &lt;&#x2F;span&gt;&lt;span&gt;uri = r.variables.request_uri;
+&lt;&#x2F;span&gt;&lt;span&gt;  r.variables.plain_uri = uri.replace(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&#x2F;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#e3bbab;&quot;&gt;\[&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&#x2F;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;g&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;%5B&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;).replace(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&#x2F;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#e3bbab;&quot;&gt;\]&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&#x2F;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;g&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;%5D&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;);
+&lt;&#x2F;span&gt;&lt;span&gt;  r.return(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;200&lt;&#x2F;span&gt;&lt;span&gt;);
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;export default &lt;&#x2F;span&gt;&lt;span&gt;{urlencode};
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>kubernetes node shell plugin</title>
+        <published>2023-01-29T00:00:00+00:00</published>
+        <updated>2023-01-29T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2023/k8s-node-shell/"/>
+        <id>https://yinheli.com/blog/2023/k8s-node-shell/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2023/k8s-node-shell/">&lt;p&gt;&lt;code&gt;kubectl exec&lt;&#x2F;code&gt; 可以进到 pod 容器内获取 shell，有时候需要 shell 到 node，而原生的 &lt;code&gt;kubectl debug&lt;&#x2F;code&gt; 虽然支持但是不支持特权模式，拿不到 root 权限，也不能用宿主机上的大部分工具，发现 &lt;code&gt;Lens&lt;&#x2F;code&gt; 上有这个功能，把核心的部分拷贝出来，做成脚本，作为 &lt;code&gt;kubectl&lt;&#x2F;code&gt; 插件。&lt;&#x2F;p&gt;
+&lt;p&gt;将 &lt;code&gt;kubectl-shell&lt;&#x2F;code&gt; 放到 &lt;code&gt;PATH&lt;&#x2F;code&gt; 即可， &lt;code&gt;kubectl shell &amp;lt;node-name&amp;gt;&lt;&#x2F;code&gt;&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;vi kubectl-shell
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;#!&#x2F;bin&#x2F;bash
+&lt;&#x2F;span&gt;&lt;span&gt;set -e
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;node=&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;${&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#dcdcdc;&quot;&gt;1&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;nodeName=&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;$(&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#dcdcdc;&quot;&gt;kubectl&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt; get node ${&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#dcdcdc;&quot;&gt;node&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;}&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#dcdcdc;&quot;&gt; -o&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt; template&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#dcdcdc;&quot;&gt; --template=&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;&amp;#39;{{index .metadata.labels &amp;quot;kubernetes.io&#x2F;hostname&amp;quot;}}&amp;#39;)&lt;&#x2F;span&gt;&lt;span&gt; 
+&lt;&#x2F;span&gt;&lt;span&gt;nodeSelector=&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;&amp;#39;&amp;quot;nodeSelector&amp;quot;: { &amp;quot;kubernetes.io&#x2F;hostname&amp;quot;: &amp;quot;&amp;#39;${&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#dcdcdc;&quot;&gt;nodeName:?&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;}&amp;#39;&amp;quot; },&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;podName=&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;node-shell-${&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#dcdcdc;&quot;&gt;node&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;kubectl run ${podName:?} --restart=Never -it --rm --timeout=5m --pod-running-timeout=5m --image overriden --overrides &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;{
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;  &amp;quot;spec&amp;quot;: {
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;    &amp;quot;hostPID&amp;quot;: true,
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;    &amp;quot;hostNetwork&amp;quot;: true,
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;    &amp;#39;&amp;quot;${&lt;&#x2F;span&gt;&lt;span&gt;nodeSelector?&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;}&amp;quot;&amp;#39;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;    &amp;quot;tolerations&amp;quot;: [{
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;        &amp;quot;operator&amp;quot;: &amp;quot;Exists&amp;quot;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;    }],
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;    &amp;quot;containers&amp;quot;: [
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;      {
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;        &amp;quot;name&amp;quot;: &amp;quot;shell&amp;quot;,
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;        &amp;quot;image&amp;quot;: &amp;quot;alpine&amp;quot;,
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;        &amp;quot;command&amp;quot;: [
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;          &amp;quot;nsenter&amp;quot;, &amp;quot;-t&amp;quot;, &amp;quot;1&amp;quot;, &amp;quot;-m&amp;quot;, &amp;quot;-u&amp;quot;, &amp;quot;-i&amp;quot;, &amp;quot;-n&amp;quot;,
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;          &amp;quot;bash&amp;quot;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;        ],
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;        &amp;quot;stdin&amp;quot;: true,
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;        &amp;quot;tty&amp;quot;: true,
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;        &amp;quot;securityContext&amp;quot;: {
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;          &amp;quot;privileged&amp;quot;: true
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;        }
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;      }
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;    ]
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;  }
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;}&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt; --attach &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;$&lt;&#x2F;span&gt;&lt;span&gt;@&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;原理：&lt;&#x2F;p&gt;
+&lt;p&gt;创建一个有特权模式的 pod，调度到对应的 node 上运行，然后 &lt;a href=&quot;https:&#x2F;&#x2F;man7.org&#x2F;linux&#x2F;man-pages&#x2F;man1&#x2F;nsenter.1.html&quot;&gt;&lt;code&gt;nsenter&lt;&#x2F;code&gt;&lt;&#x2F;a&gt;  拿到 root shell&lt;&#x2F;p&gt;
+&lt;p&gt;P.S.&lt;&#x2F;p&gt;
+&lt;p&gt;发现已有社区相关&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;kvaps&#x2F;kubectl-node-shell&quot;&gt;插件&lt;&#x2F;a&gt;了，下次可以先去 &lt;a href=&quot;https:&#x2F;&#x2F;krew.sigs.k8s.io&#x2F;plugins&#x2F;&quot;&gt;krew&lt;&#x2F;a&gt; 找一下 :)&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>kaniko build cli</title>
+        <published>2023-01-18T00:00:00+00:00</published>
+        <updated>2023-01-18T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2023/kaniko-build-cli/"/>
+        <id>https://yinheli.com/blog/2023/kaniko-build-cli/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2023/kaniko-build-cli/">&lt;p&gt;造了个 cli 工具，&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;yinheli&#x2F;kaniko-build&quot;&gt;kaniko-build&lt;&#x2F;a&gt; 用于在 k8s 集群中打包镜像。&lt;&#x2F;p&gt;
+&lt;p&gt;kaniko 是我们用的比较多的工具，包括 tekton 流水线上也在使用，如果在本地调试，此前要么是本地 docker build 要么就是几个 bash 脚本，构建环境和创建构建资源，这次把这些脚本整理了一下，写成 python 脚本，用 &lt;code&gt;click&lt;&#x2F;code&gt; 这个包很快就做成一个 cli 工具，而相关的 yaml 文件则使用模板渲染丢给 kubectl pipe，觉得清爽方便了很多。&lt;&#x2F;p&gt;
+&lt;p&gt;借助 kaniko 本身的能力，它除了可以支持挂载 pv ，使用本地 Dockerfile， 也支持远程包括 git， s3 等，具体请参考官方文档吧，我只用到 pv 挂载和 git 远程库两种场景，其他场景未做测试。&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;xiang-guan-zi-liao&quot;&gt;相关资料&lt;&#x2F;h1&gt;
+&lt;ul&gt;
+&lt;li&gt;kaniko &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;GoogleContainerTools&#x2F;kaniko&quot;&gt;https:&#x2F;&#x2F;github.com&#x2F;GoogleContainerTools&#x2F;kaniko&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>阿里云 k8s ingress xff 问题</title>
+        <published>2023-01-17T00:00:00+00:00</published>
+        <updated>2023-01-17T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2023/aliyun-k8s-ingress-xff-issue/"/>
+        <id>https://yinheli.com/blog/2023/aliyun-k8s-ingress-xff-issue/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2023/aliyun-k8s-ingress-xff-issue/">&lt;p&gt;在排查 IP 问题的时候发现记录的 IP 有明显问题，都是运营商或者机房的，感觉 xff 出问题了，修改 nginx-ingress 的 ConfigMap 解决，以下为推荐配置，请参考官方文档和业务情况适当调整&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;yaml&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-yaml &quot;&gt;&lt;code class=&quot;language-yaml&quot; data-lang=&quot;yaml&quot;&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;generate-request-id&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;true&amp;quot;
+&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;use-forwarded-headers&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;true&amp;quot;
+&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;enable-real-ip&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;true&amp;quot;
+&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;proxy-real-ip-cidr&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;0.0.0.0&#x2F;0&amp;quot;
+&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;proxy-add-original-uri-header&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;true&amp;quot;
+&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;compute-full-forwarded-for&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;true&amp;quot;
+&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;allow-backend-server-header&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;true&amp;quot;
+&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;enable-underscores-in-headers&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;true&amp;quot;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;默认的 ingress 对应的负载均衡器为安装时的固定规格，也可以参考 Annotation 配置，调整 nginx-lb 的 service，&lt;a href=&quot;https:&#x2F;&#x2F;yinheli.com&#x2F;blog&#x2F;2023&#x2F;aliyun-k8s-reduce-costs&#x2F;&quot;&gt;调整规格&lt;&#x2F;a&gt;，计划方案，如 LCU 计费或包年包月计划等，如果波峰比较大，个人比较推荐 LCU 的计费模式，省钱的同时也能应对突增流量。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;xiang-guan-zi-liao&quot;&gt;相关资料&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;kubernetes&#x2F;ingress-nginx&quot;&gt;https:&#x2F;&#x2F;github.com&#x2F;kubernetes&#x2F;ingress-nginx&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;kubernetes.github.io&#x2F;ingress-nginx&#x2F;&quot;&gt;https:&#x2F;&#x2F;kubernetes.github.io&#x2F;ingress-nginx&#x2F;&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;help.aliyun.com&#x2F;document_detail&#x2F;86531.html&quot;&gt;https:&#x2F;&#x2F;help.aliyun.com&#x2F;document_detail&#x2F;86531.html&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>阿里云 k8s 节约成本记录</title>
+        <published>2023-01-11T00:00:00+00:00</published>
+        <updated>2023-01-11T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2023/aliyun-k8s-reduce-costs/"/>
+        <id>https://yinheli.com/blog/2023/aliyun-k8s-reduce-costs/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2023/aliyun-k8s-reduce-costs/">&lt;h1 id=&quot;bei-jing&quot;&gt;背景&lt;&#x2F;h1&gt;
+&lt;p&gt;公司部分阿里云的项目逐步迁入阿里云的 K8S，由于业务场景需求，迁入版本为 ASK，ASK 是构建在 ECI 之上的，所以所有的工作负载，pod 实际上是对应 ECI 的一个容器，如没有明确指定配置或设定 &lt;code&gt;resource&lt;&#x2F;code&gt; 默认为 &lt;code&gt;2cpu,4G&lt;&#x2F;code&gt; 版本，并且按需付费。&lt;&#x2F;p&gt;
+&lt;p&gt;我们有 3 套环境，测试、 灰度和生产，开发环境则部署在公司办公室环境的本地虚拟服务器中。&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;jie-sheng-fang-an&quot;&gt;节省方案&lt;&#x2F;h1&gt;
+&lt;h2 id=&quot;ce-shi-huan-jing&quot;&gt;测试环境&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;无状态负载配置 &lt;code&gt;Cron HPA&lt;&#x2F;code&gt; 定时关闭（设置副本数为 &lt;code&gt;0&lt;&#x2F;code&gt;）（比如每天凌晨）&lt;&#x2F;li&gt;
+&lt;li&gt;优化 cpu &amp;amp; 内存配置，尽量使用抢占式实例，突发性能实例能能节省很多，超乎想象&lt;&#x2F;li&gt;
+&lt;li&gt;尽量使用内网负载均衡器，如果没有外部访问需求，应该创建 &lt;code&gt;ClusterIP&lt;&#x2F;code&gt; 的 service&lt;&#x2F;li&gt;
+&lt;li&gt;实用 &lt;code&gt;LCU&lt;&#x2F;code&gt; 计费的负载均衡器和 ingress&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;sheng-chan-huan-jing&quot;&gt;生产环境&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;优化 cpu &amp;amp; 内存配置，避免浪费，更多副本可能比更高配的机器省钱，更能避免单点故障&lt;&#x2F;li&gt;
+&lt;li&gt;使用 &lt;code&gt;LCU&lt;&#x2F;code&gt; 计费的负载均衡器，包括 ingress。这比较适合流量峰谷比较明显的场景&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h1 id=&quot;shi-ji-xiao-guo&quot;&gt;实际效果&lt;&#x2F;h1&gt;
+&lt;ul&gt;
+&lt;li&gt;测试环境节省超过 70%&lt;&#x2F;li&gt;
+&lt;li&gt;生产环境待评估，预计超过 30%&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h1 id=&quot;xiang-guan-zi-liao&quot;&gt;相关资料&lt;&#x2F;h1&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;help.aliyun.com&#x2F;document_detail&#x2F;154527.htm&quot;&gt;ECI 计费文档&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;ECS &lt;a href=&quot;https:&#x2F;&#x2F;www.aliyun.com&#x2F;price&#x2F;product#&#x2F;ecs&#x2F;detail&#x2F;vm&quot;&gt;价格表&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;更多&lt;a href=&quot;https:&#x2F;&#x2F;help.aliyun.com&#x2F;document_detail&#x2F;186939.html&quot;&gt;注解说明&lt;&#x2F;a&gt;， 如抢占式突发性能实例&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>hello world, hello rust</title>
+        <published>2023-01-11T00:00:00+00:00</published>
+        <updated>2023-01-11T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2023/hello-world-hello-rust/"/>
+        <id>https://yinheli.com/blog/2023/hello-world-hello-rust/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2023/hello-world-hello-rust/">&lt;p&gt;blog 从 hugo 迁入 &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;getzola&#x2F;zola&quot;&gt;zola&lt;&#x2F;a&gt; 偏爱 rust。&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>stable diffusion</title>
+        <published>2022-10-07T00:00:00+00:00</published>
+        <updated>2022-10-07T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2023/learn-stable-diffusion/"/>
+        <id>https://yinheli.com/blog/2023/learn-stable-diffusion/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2023/learn-stable-diffusion/">&lt;h1 id=&quot;kai-shi&quot;&gt;开始&lt;&#x2F;h1&gt;
+&lt;p&gt;https:&#x2F;&#x2F;github.com&#x2F;AUTOMATIC1111&#x2F;stable-diffusion-webui
+https:&#x2F;&#x2F;github.com&#x2F;comfyanonymous&#x2F;ComfyUI&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;ru-men-xue-xi-kai-fa-zhe-jiao-du&quot;&gt;入门学习（开发者角度）&lt;&#x2F;h1&gt;
+&lt;ul&gt;
+&lt;li&gt;huggingface 的公开课 https:&#x2F;&#x2F;github.com&#x2F;huggingface&#x2F;diffusion-models-class&lt;&#x2F;li&gt;
+&lt;li&gt;相对系统的总结了一些 sd-webui 的使用和基本概念 https:&#x2F;&#x2F;stable-diffusion-art.com&#x2F;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h1 id=&quot;ji-chu-mo-xing&quot;&gt;基础模型&lt;&#x2F;h1&gt;
+&lt;blockquote&gt;
+&lt;p&gt;https:&#x2F;&#x2F;huggingface.co&#x2F;runwayml&#x2F;stable-diffusion-v1-5&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;huggingface.co&#x2F;runwayml&#x2F;stable-diffusion-v1-5&#x2F;resolve&#x2F;main&#x2F;v1-5-pruned-emaonly.ckpt&quot;&gt;v1-5-pruned-emaonly.ckpt&lt;&#x2F;a&gt; - 4.27GB, ema-only weight. uses less VRAM - suitable for inference
+&lt;ul&gt;
+&lt;li&gt;适合推理&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;https:&#x2F;&#x2F;huggingface.co&#x2F;runwayml&#x2F;stable-diffusion-v1-5&#x2F;resolve&#x2F;main&#x2F;v1-5-pruned.ckpt&quot;&gt;v1-5-pruned.ckpt&lt;&#x2F;a&gt; - 7.7GB, ema+non-ema weights. uses more VRAM - suitable for fine-tuning
+&lt;ul&gt;
+&lt;li&gt;适合调优&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;更推荐下载 &lt;code&gt;safetensors&lt;&#x2F;code&gt; 格式&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;geng-duo-mo-xing&quot;&gt;更多模型&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;C站 https:&#x2F;&#x2F;civitai.com&#x2F;&lt;&#x2F;li&gt;
+&lt;li&gt;哩布哩布 https:&#x2F;&#x2F;www.liblib.ai&#x2F;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>Greenplum 入门</title>
+        <published>2020-03-11T00:00:00+00:00</published>
+        <updated>2020-03-11T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2020/greenplum-get-starting/"/>
+        <id>https://yinheli.com/blog/2020/greenplum-get-starting/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2020/greenplum-get-starting/">&lt;p&gt;Greenplum 数据库是 shared nothing 的分析型 MPP 数据库。近期由于老婆的项目组在使用，我也顺便了解学习下。记录下主要的流程步骤备忘。&lt;&#x2F;p&gt;
+&lt;p&gt;如果你参考我的文档，需要对 Greenplum 的架构有个大概的了解，官网和中文社区是个好去处。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;huan-jing-zhun-bei&quot;&gt;环境准备&lt;&#x2F;h2&gt;
+&lt;p&gt;资源有限，用 docker 来模拟多个服务器的情况，先准备 docker 环境。 我这里宿主机是 centos 7， 参考 docker 官方文档, 依次安装 docker 和 docker-composer。&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# setup repository
+&lt;&#x2F;span&gt;&lt;span&gt;yum install -y yum-utils \
+&lt;&#x2F;span&gt;&lt;span&gt;  device-mapper-persistent-data \
+&lt;&#x2F;span&gt;&lt;span&gt;  lvm2
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;yum-config-manager \
+&lt;&#x2F;span&gt;&lt;span&gt;    --add-repo \
+&lt;&#x2F;span&gt;&lt;span&gt;    https:&#x2F;&#x2F;download.docker.com&#x2F;linux&#x2F;centos&#x2F;docker-ce.repo
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;yum-config-manager --disable docker-ce-nightly
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;yum install -y docker-ce docker-ce-cli containerd.io
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# start docker
+&lt;&#x2F;span&gt;&lt;span&gt;systemctl start docker
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# enable docker auto start
+&lt;&#x2F;span&gt;&lt;span&gt;systemctl enable docker
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# install docker-composer
+&lt;&#x2F;span&gt;&lt;span&gt;curl -L &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;https:&#x2F;&#x2F;github.com&#x2F;docker&#x2F;compose&#x2F;releases&#x2F;download&#x2F;1.25.4&#x2F;docker-compose-$(&lt;&#x2F;span&gt;&lt;span&gt;uname -s&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;)-$(&lt;&#x2F;span&gt;&lt;span&gt;uname -m&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;)&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt; -o &#x2F;usr&#x2F;local&#x2F;bin&#x2F;docker-compose
+&lt;&#x2F;span&gt;&lt;span&gt;chmod +x &#x2F;usr&#x2F;local&#x2F;bin&#x2F;docker-compose
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# test docker and composer
+&lt;&#x2F;span&gt;&lt;span&gt;docker info
+&lt;&#x2F;span&gt;&lt;span&gt;docker-compose version
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;要模拟整个安装流程，因此只准备一个基础的镜像，仅安装必要的软件包。&lt;code&gt;Dockerfile&lt;&#x2F;code&gt; 如下：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;dockerfile&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-dockerfile &quot;&gt;&lt;code class=&quot;language-dockerfile&quot; data-lang=&quot;dockerfile&quot;&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;FROM&lt;&#x2F;span&gt;&lt;span&gt; centos:centos7
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;RUN &lt;&#x2F;span&gt;&lt;span&gt;yum install -y wget
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 够用阿里云的镜像，在国内，加速包下载
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 安装基本的软件包，并支持 sshd 服务，greenplum 节点之间通讯需要
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;RUN &lt;&#x2F;span&gt;&lt;span&gt;wget -O &#x2F;etc&#x2F;yum.repos.d&#x2F;CentOS-Base.repo http:&#x2F;&#x2F;mirrors.aliyun.com&#x2F;repo&#x2F;Centos-7.repo &amp;amp;&amp;amp; \
+&lt;&#x2F;span&gt;&lt;span&gt;    yum makecache  &amp;amp;&amp;amp; \
+&lt;&#x2F;span&gt;&lt;span&gt;    yum install -y which bind-utils net-tools less wget curl zip unzip telnet lsof git &amp;amp;&amp;amp; \
+&lt;&#x2F;span&gt;&lt;span&gt;    yum install -y passwd openssh-clients openssh-server ssh-keygen &amp;amp;&amp;amp; \
+&lt;&#x2F;span&gt;&lt;span&gt;    ssh-keygen -t rsa -f &#x2F;etc&#x2F;ssh&#x2F;ssh_host_rsa_key -N &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt; -q &amp;amp;&amp;amp; \
+&lt;&#x2F;span&gt;&lt;span&gt;    ssh-keygen -t ecdsa -f &#x2F;etc&#x2F;ssh&#x2F;ssh_host_ecdsa_key -N &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt; -q &amp;amp;&amp;amp; \
+&lt;&#x2F;span&gt;&lt;span&gt;    ssh-keygen -t ed25519 -f &#x2F;etc&#x2F;ssh&#x2F;ssh_host_ed25519_key -N &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt; -q &amp;amp;&amp;amp; \
+&lt;&#x2F;span&gt;&lt;span&gt;    echo &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;UseDNS no&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt; &amp;gt;&amp;gt; &#x2F;etc&#x2F;ssh&#x2F;sshd_config
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 安装 greenplum 依赖包
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;RUN &lt;&#x2F;span&gt;&lt;span&gt;yum install -y ed apr apr-util bzip2 krb5-devel libevent libyaml openssl iproute
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 初始化用户和数据文件
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;RUN &lt;&#x2F;span&gt;&lt;span&gt;useradd -m gpadmin
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;RUN &lt;&#x2F;span&gt;&lt;span&gt;mkdir -p &#x2F;data &amp;amp;&amp;amp; chown -R gpadmin:gpadmin &#x2F;data
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;EXPOSE &lt;&#x2F;span&gt;&lt;span&gt;22
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;CMD &lt;&#x2F;span&gt;&lt;span&gt;[&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;&#x2F;usr&#x2F;sbin&#x2F;sshd&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;-D&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;]
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;build 基于 centos 7 的镜像，名为 &lt;code&gt;mygreenplum&lt;&#x2F;code&gt;，后面我们用到这个镜像。&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;docker build . -t mygreenplum
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;准备 &lt;code&gt;docker-compose.yaml&lt;&#x2F;code&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;规划 1 个 master 节点，2 个 segment 节点，1 个 ETL 节点（用来做 ETL 任务）&lt;&#x2F;p&gt;
+&lt;p&gt;节点命名参考官方命名习惯: mdw ( master 节点 )&lt;&#x2F;p&gt;
+&lt;p&gt;另外注意，需要准备一个内存大一点的服务器，我的这里的试验机为 8G 内存&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;pre data-lang=&quot;yaml&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-yaml &quot;&gt;&lt;code class=&quot;language-yaml&quot; data-lang=&quot;yaml&quot;&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;version&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;3&amp;quot;
+&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;services&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;master&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;image&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;mygreenplum&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;hostname&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;mdw&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;container_name&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;master&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;ports&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;      - &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;2222:22&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;      - &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;5432:5432&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;sysctls&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;net.core.somaxconn&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;1024
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;net.ipv4.tcp_syncookies&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;0
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;volumes&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;      - &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;.:&#x2F;root&#x2F;downloads&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;networks&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;      &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;main&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;aliases&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;          - &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;master&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;segment01&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;image&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;mygreenplum&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;hostname&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;segment01&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;container_name&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;segment01&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;volumes&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;      - &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;.:&#x2F;root&#x2F;downloads&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;networks&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;      &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;main&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;aliases&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;          - &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;segment01&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;segment02&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;image&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;mygreenplum&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;hostname&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;segment02&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;container_name&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;segment02&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;volumes&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;      - &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;.:&#x2F;root&#x2F;downloads&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;networks&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;      &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;main&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;aliases&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;          - &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;segment02&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;segment03&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;image&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;mygreenplum&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;hostname&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;segment03&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;container_name&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;segment03&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;volumes&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;      - &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;.:&#x2F;root&#x2F;downloads&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;networks&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;      &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;main&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;aliases&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;          - &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;segment03&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;networks&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#569cd6;&quot;&gt;main&lt;&#x2F;span&gt;&lt;span&gt;:
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;github 下载 Greenplum 二进制安装包&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot;&gt;&lt;code&gt;&lt;span&gt;wget https:&#x2F;&#x2F;github.com&#x2F;greenplum-db&#x2F;gpdb&#x2F;releases&#x2F;download&#x2F;6.4.0&#x2F;greenplum-db-6.4.0-rhel7-x86_64.rpm
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;启动服务&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;docker-composer up -d
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 查看启动情况
+&lt;&#x2F;span&gt;&lt;span&gt;docker ps -a
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;an-zhuang&quot;&gt;安装&lt;&#x2F;h2&gt;
+&lt;p&gt;参考 &lt;a href=&quot;https:&#x2F;&#x2F;gpdb.docs.pivotal.io&#x2F;6-4&#x2F;install_guide&#x2F;install_gpdb.html&quot;&gt;pivotal 上的安装指导&lt;&#x2F;a&gt;, 由于是在 docker 里，指导里的系统配置部分可以省略，实际生产环境建议遵循指导手册说明，以及相关参数的调优。&lt;&#x2F;p&gt;
+&lt;p&gt;进入 master 节点，初始化其 gpadmin 用户 ssh 密钥&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;docker exec -it master &#x2F;bin&#x2F;bash -c &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;su - gpadmin&amp;#39;
+&lt;&#x2F;span&gt;&lt;span&gt;ssh-keygen
+&lt;&#x2F;span&gt;&lt;span&gt;cat ~&#x2F;.ssh&#x2F;id_rsa.pub
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;进入 其他节点，把 master 节点的 ssh 公钥写入 gpadmin 用户下&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;docker exec -it segment01 &#x2F;bin&#x2F;bash -c &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;su - gpadmin&amp;#39;
+&lt;&#x2F;span&gt;&lt;span&gt;mkdir .ssh
+&lt;&#x2F;span&gt;&lt;span&gt;vi .ssh&#x2F;authorized_keys
+&lt;&#x2F;span&gt;&lt;span&gt;chmod 700 .ssh &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;&amp;amp;&amp;amp; &lt;&#x2F;span&gt;&lt;span&gt;chmod 600 .ssh&#x2F;authorized_keys
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;回到 master 节点，准备 greenplum-db 的安装&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;docker exec -it master &#x2F;bin&#x2F;bash
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# root 用户执行安装
+&lt;&#x2F;span&gt;&lt;span&gt;yum install -y downloads&#x2F;greenplum-db-6.4.0-rhel7-x86_64.rpm
+&lt;&#x2F;span&gt;&lt;span&gt;chown -R gpadmin:gpadmin &#x2F;usr&#x2F;local&#x2F;greenplum&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;*
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 切换到 gpadmin 修改 profile
+&lt;&#x2F;span&gt;&lt;span&gt;su - gpadmin
+&lt;&#x2F;span&gt;&lt;span&gt;mkdir -p &#x2F;data&#x2F;master
+&lt;&#x2F;span&gt;&lt;span&gt;vi ~&#x2F;.bash_profile
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;source &#x2F;usr&#x2F;local&#x2F;greenplum-db&#x2F;greenplum_path.sh
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;export &lt;&#x2F;span&gt;&lt;span&gt;MASTER_DATA_DIRECTORY=&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;&#x2F;data&#x2F;master&#x2F;gpseg-1&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 应用 profile
+&lt;&#x2F;span&gt;&lt;span&gt;source ~&#x2F;.bash_prifile
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 准备 hostfile_exkeys 将所有的 segment、etl 节点的 hostname 都写到里面
+&lt;&#x2F;span&gt;&lt;span&gt;vi hostfile_exkeys
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 验证所有的节点都是可以连接的
+&lt;&#x2F;span&gt;&lt;span&gt;gpssh -f hostfile_exkeys -e &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;#39;uname -a&amp;#39;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;进入其他节点，和 master 节点一样，安装 greenplum-db 的 rpm 包&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;docker exec -it segment01 &#x2F;bin&#x2F;bash
+&lt;&#x2F;span&gt;&lt;span&gt;yum install -y downloads&#x2F;greenplum-db-6.4.0-rhel7-x86_64.rpm
+&lt;&#x2F;span&gt;&lt;span&gt;chown -R gpadmin:gpadmin &#x2F;usr&#x2F;local&#x2F;greenplum&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;*
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;chu-shi-hua&quot;&gt;初始化&lt;&#x2F;h2&gt;
+&lt;h2 id=&quot;deng-lu&quot;&gt;登录&lt;&#x2F;h2&gt;
+&lt;h2 id=&quot;ce-shi-dao-ru-shu-ju&quot;&gt;测试导入数据&lt;&#x2F;h2&gt;
+&lt;p&gt;参考资料：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Docker: https:&#x2F;&#x2F;docs.docker.com&#x2F;install&#x2F;&lt;&#x2F;li&gt;
+&lt;li&gt;Greenplum: https:&#x2F;&#x2F;github.com&#x2F;greenplum-db&#x2F;gpdb &amp;amp; https:&#x2F;&#x2F;greenplum.org&#x2F;&lt;&#x2F;li&gt;
+&lt;li&gt;pivotal gpdp: https:&#x2F;&#x2F;gpdb.docs.pivotal.io&#x2F;6-4&#x2F;main&#x2F;index.html&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>GORM 自定义数据类型的处理</title>
+        <published>2018-05-17T00:00:00+00:00</published>
+        <updated>2018-05-17T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2018/gorm-custom-type/"/>
+        <id>https://yinheli.com/blog/2018/gorm-custom-type/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2018/gorm-custom-type/">&lt;p&gt;如果有自定的数据类型，关键是实现 sql 的序列和反序列化方法，即: &lt;code&gt;driver.Valuer&lt;&#x2F;code&gt; &lt;code&gt;sql.Scanner&lt;&#x2F;code&gt; 接口。&lt;&#x2F;p&gt;
+&lt;p&gt;例如有如下数据结构&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;go&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-go &quot;&gt;&lt;code class=&quot;language-go&quot; data-lang=&quot;go&quot;&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span style=&quot;color:#4ec9b0;&quot;&gt;StringArray &lt;&#x2F;span&gt;&lt;span&gt;[]string
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span style=&quot;color:#4ec9b0;&quot;&gt;RecArticle &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;{
+&lt;&#x2F;span&gt;&lt;span&gt;	Id     uint64 &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;`gorm:&amp;quot;column:id&amp;quot; json:&amp;quot;Id,string&amp;quot;`
+&lt;&#x2F;span&gt;&lt;span&gt;	Tags   &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;StringArray  &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;`gorm:&amp;quot;column:tags&amp;quot; json:&amp;quot;tags&amp;quot;`
+&lt;&#x2F;span&gt;&lt;span&gt;	Cates  &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;StringArray  &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;`gorm:&amp;quot;column:cates&amp;quot; json:&amp;quot;cates&amp;quot;`
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;实现上面的接口&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;go&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-go &quot;&gt;&lt;code class=&quot;language-go&quot; data-lang=&quot;go&quot;&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;func &lt;&#x2F;span&gt;&lt;span&gt;(t &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;StringArray&lt;&#x2F;span&gt;&lt;span&gt;) Value() (driver.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;Value&lt;&#x2F;span&gt;&lt;span&gt;, error) {
+&lt;&#x2F;span&gt;&lt;span&gt;	b, _ := json.Marshal(t)
+&lt;&#x2F;span&gt;&lt;span&gt;	&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;return &lt;&#x2F;span&gt;&lt;span&gt;string(b), &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;nil
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;func &lt;&#x2F;span&gt;&lt;span&gt;(t &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;*StringArray&lt;&#x2F;span&gt;&lt;span&gt;) Scan(src &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;interface&lt;&#x2F;span&gt;&lt;span&gt;{}) error {
+&lt;&#x2F;span&gt;&lt;span&gt;	&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;if &lt;&#x2F;span&gt;&lt;span&gt;src &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;!= nil &lt;&#x2F;span&gt;&lt;span&gt;{
+&lt;&#x2F;span&gt;&lt;span&gt;		&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;var &lt;&#x2F;span&gt;&lt;span&gt;v []string
+&lt;&#x2F;span&gt;&lt;span&gt;		json.Unmarshal(src.([]byte), &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;v)
+&lt;&#x2F;span&gt;&lt;span&gt;		&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;*&lt;&#x2F;span&gt;&lt;span&gt;t = v
+&lt;&#x2F;span&gt;&lt;span&gt;	}
+&lt;&#x2F;span&gt;&lt;span&gt;	&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;return nil
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;如果对时间戳，json 都需要特定的处理&lt;&#x2F;p&gt;
+&lt;p&gt;add callbacks&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;go&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-go &quot;&gt;&lt;code class=&quot;language-go&quot; data-lang=&quot;go&quot;&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;&#x2F;&#x2F; ... init gorm
+&lt;&#x2F;span&gt;&lt;span&gt;DB, err = gorm.Open(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;mysql&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;DSN&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;)
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;&#x2F;&#x2F; ... handle error
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;&#x2F;&#x2F; add callbacks refer: http:&#x2F;&#x2F;gorm.io&#x2F;docs&#x2F;write_plugins.html
+&lt;&#x2F;span&gt;&lt;span&gt;DB.Callback().Create().After(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;gorm:update_time_stamp&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;).Register(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;mark_timestamp_normal&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, markTimestampNormal)
+&lt;&#x2F;span&gt;&lt;span&gt;DB.Callback().Update().After(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;gorm:update_time_stamp&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;).Register(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;mark_timestamp_normal&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, markTimestampNormal)
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;&#x2F;&#x2F; ....
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;func &lt;&#x2F;span&gt;&lt;span&gt;markTimestampNormal(scope &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;*&lt;&#x2F;span&gt;&lt;span&gt;gorm.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;Scope&lt;&#x2F;span&gt;&lt;span&gt;) {
+&lt;&#x2F;span&gt;&lt;span&gt;	&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;if &lt;&#x2F;span&gt;&lt;span&gt;createdAtField, ok := scope.FieldByName(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;CreatedAt&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;); ok {
+&lt;&#x2F;span&gt;&lt;span&gt;		createdAtField.IsNormal = &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;true
+&lt;&#x2F;span&gt;&lt;span&gt;	}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;	&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;if &lt;&#x2F;span&gt;&lt;span&gt;updatedAtField, ok := scope.FieldByName(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;UpdatedAt&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;); ok {
+&lt;&#x2F;span&gt;&lt;span&gt;		updatedAtField.IsNormal = &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;true
+&lt;&#x2F;span&gt;&lt;span&gt;	}
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;alias&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;go&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-go &quot;&gt;&lt;code class=&quot;language-go&quot; data-lang=&quot;go&quot;&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;&#x2F;&#x2F; alias
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span style=&quot;color:#4ec9b0;&quot;&gt;Timestamp &lt;&#x2F;span&gt;&lt;span&gt;time.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;Time
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;&#x2F;&#x2F; UnmarshalParam echo api @see https:&#x2F;&#x2F;echo.labstack.com&#x2F;guide&#x2F;request
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;func &lt;&#x2F;span&gt;&lt;span&gt;(t &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;*Timestamp&lt;&#x2F;span&gt;&lt;span&gt;) UnmarshalParam(src string) error {
+&lt;&#x2F;span&gt;&lt;span&gt;	&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;if &lt;&#x2F;span&gt;&lt;span&gt;src &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;!= &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;&amp;quot; &lt;&#x2F;span&gt;&lt;span&gt;{
+&lt;&#x2F;span&gt;&lt;span&gt;		m, err := strconv.ParseInt(src, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;10&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;64&lt;&#x2F;span&gt;&lt;span&gt;)
+&lt;&#x2F;span&gt;&lt;span&gt;		&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;if &lt;&#x2F;span&gt;&lt;span&gt;err &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;!= nil &lt;&#x2F;span&gt;&lt;span&gt;{
+&lt;&#x2F;span&gt;&lt;span&gt;			&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;return &lt;&#x2F;span&gt;&lt;span&gt;err
+&lt;&#x2F;span&gt;&lt;span&gt;		}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;		ts := time.Unix(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b5cea8;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, m&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;*&lt;&#x2F;span&gt;&lt;span&gt;int64(time.Millisecond))
+&lt;&#x2F;span&gt;&lt;span&gt;		&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;*&lt;&#x2F;span&gt;&lt;span&gt;t = Timestamp(ts)
+&lt;&#x2F;span&gt;&lt;span&gt;	}
+&lt;&#x2F;span&gt;&lt;span&gt;	&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;return nil
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;&#x2F;&#x2F; MarshalJSON echo api json response
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;func &lt;&#x2F;span&gt;&lt;span&gt;(t &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;*Timestamp&lt;&#x2F;span&gt;&lt;span&gt;) MarshalJSON() ([]byte, error) {
+&lt;&#x2F;span&gt;&lt;span&gt;	&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;if &lt;&#x2F;span&gt;&lt;span&gt;t &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;!= nil &lt;&#x2F;span&gt;&lt;span&gt;{
+&lt;&#x2F;span&gt;&lt;span&gt;		ts := time.Time(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;*&lt;&#x2F;span&gt;&lt;span&gt;t)
+&lt;&#x2F;span&gt;&lt;span&gt;		&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;return &lt;&#x2F;span&gt;&lt;span&gt;[]byte(fmt.Sprintf(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;`&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#b4cea8;&quot;&gt;%d&lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;`&lt;&#x2F;span&gt;&lt;span&gt;, ts.UnixNano()&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;&#x2F;&lt;&#x2F;span&gt;&lt;span&gt;int64(time.Millisecond))), &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;nil
+&lt;&#x2F;span&gt;&lt;span&gt;	}
+&lt;&#x2F;span&gt;&lt;span&gt;	&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;return nil&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;nil
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;&#x2F;&#x2F; for sql log, print readable format
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;func &lt;&#x2F;span&gt;&lt;span&gt;(t &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;Timestamp&lt;&#x2F;span&gt;&lt;span&gt;) String() string {
+&lt;&#x2F;span&gt;&lt;span&gt;	ts := time.Time(t)
+&lt;&#x2F;span&gt;&lt;span&gt;	&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;return &lt;&#x2F;span&gt;&lt;span&gt;ts.Format(time.RFC3339)
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;&#x2F;&#x2F; insert into database conversion
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;func &lt;&#x2F;span&gt;&lt;span&gt;(t &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;Timestamp&lt;&#x2F;span&gt;&lt;span&gt;) Value() (driver.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;Value&lt;&#x2F;span&gt;&lt;span&gt;, error) {
+&lt;&#x2F;span&gt;&lt;span&gt;	&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;return &lt;&#x2F;span&gt;&lt;span&gt;time.Time(t), &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;nil
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;&#x2F;&#x2F; read from database conversion
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;func &lt;&#x2F;span&gt;&lt;span&gt;(t &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;*Timestamp&lt;&#x2F;span&gt;&lt;span&gt;) Scan(src &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;interface&lt;&#x2F;span&gt;&lt;span&gt;{}) error {
+&lt;&#x2F;span&gt;&lt;span&gt;	&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;if &lt;&#x2F;span&gt;&lt;span&gt;val, ok := src.(time.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;Time&lt;&#x2F;span&gt;&lt;span&gt;); ok {
+&lt;&#x2F;span&gt;&lt;span&gt;		&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;*&lt;&#x2F;span&gt;&lt;span&gt;t = Timestamp(val)
+&lt;&#x2F;span&gt;&lt;span&gt;	}
+&lt;&#x2F;span&gt;&lt;span&gt;	&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;return nil
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;model&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;go&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-go &quot;&gt;&lt;code class=&quot;language-go&quot; data-lang=&quot;go&quot;&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span style=&quot;color:#4ec9b0;&quot;&gt;App &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;{
+&lt;&#x2F;span&gt;&lt;span&gt;	Id        uint32     &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;`json:&amp;quot;id,string&amp;quot;`
+&lt;&#x2F;span&gt;&lt;span&gt;	AppKey    string     &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;`json:&amp;quot;appKey&amp;quot; validate:&amp;quot;required&amp;quot;`
+&lt;&#x2F;span&gt;&lt;span&gt;	AppSecret string     &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;`json:&amp;quot;appSecret&amp;quot; validate:&amp;quot;required&amp;quot;`
+&lt;&#x2F;span&gt;&lt;span&gt;	AppName   string     &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;`json:&amp;quot;appName&amp;quot; validate:&amp;quot;required&amp;quot;`
+&lt;&#x2F;span&gt;&lt;span&gt;	CreatedAt &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;Timestamp  &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;`json:&amp;quot;createdAt&amp;quot;`
+&lt;&#x2F;span&gt;&lt;span&gt;	UpdatedAt &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;*Timestamp &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;`json:&amp;quot;updatedAt&amp;quot;`
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Refer:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;http:&#x2F;&#x2F;gorm.io&#x2F;docs&#x2F;write_plugins.html&lt;&#x2F;li&gt;
+&lt;li&gt;https:&#x2F;&#x2F;github.com&#x2F;jinzhu&#x2F;gorm&#x2F;issues&#x2F;1236#issuecomment-389633747&lt;&#x2F;li&gt;
+&lt;li&gt;https:&#x2F;&#x2F;echo.labstack.com&#x2F;guide&#x2F;request&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>远程初始化树莓派</title>
+        <published>2017-09-06T00:00:00+00:00</published>
+        <updated>2017-09-06T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2017/raspberry-install-without-keyboard/"/>
+        <id>https://yinheli.com/blog/2017/raspberry-install-without-keyboard/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2017/raspberry-install-without-keyboard/">&lt;p&gt;没有键盘，显示器，只有 wifi 网络的情况下，启用 树莓派, 官方下载树莓派镜像，使用 Etcher 刷入 sd 卡&lt;&#x2F;p&gt;
+&lt;p&gt;在 sd 卡根目录创建空白 ssh 文件，标记启用 ssh&lt;&#x2F;p&gt;
+&lt;p&gt;找个 linux 服务器，挂载 sd 卡的 ext 分区，修改：&lt;code&gt;vi &#x2F;etc&#x2F;network&#x2F;interfaces&lt;&#x2F;code&gt;&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot;&gt;&lt;code&gt;&lt;span&gt;&#x2F;&#x2F; ...
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;&#x2F;&#x2F; 添加
+&lt;&#x2F;span&gt;&lt;span&gt;allow-hotplug wlan0
+&lt;&#x2F;span&gt;&lt;span&gt;iface wlan0 inet dhcp
+&lt;&#x2F;span&gt;&lt;span&gt;    wpa-ssid &amp;quot;joy&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    wpa-psk &amp;quot;xxxx&amp;quot; &#x2F;&#x2F; 密码（明文）
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;code&gt;vi &#x2F;etc&#x2F;wpa_supplicant&#x2F;wpa_supplicant.conf&lt;&#x2F;code&gt;&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot;&gt;&lt;code&gt;&lt;span&gt;country=US
+&lt;&#x2F;span&gt;&lt;span&gt;ctrl_interface=DIR=&#x2F;var&#x2F;run&#x2F;wpa_supplicant GROUP=netdev
+&lt;&#x2F;span&gt;&lt;span&gt;update_config=1
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;network={
+&lt;&#x2F;span&gt;&lt;span&gt;    ssid=&amp;quot;joy&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;    psk=&amp;quot;xxxx&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;配置 wifi 重连&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot;&gt;&lt;code&gt;&lt;span&gt;cp &#x2F;etc&#x2F;ifplugd&#x2F;action.d&#x2F;ifupdown &#x2F;etc&#x2F;ifplugd&#x2F;action.d&#x2F;ifupdown.bak
+&lt;&#x2F;span&gt;&lt;span&gt;cp &#x2F;etc&#x2F;wpa_supplicant&#x2F;ifupdown.sh &#x2F;etc&#x2F;ifplugd&#x2F;action.d&#x2F;ifupdown
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>iptables 笔记</title>
+        <published>2015-02-11T00:00:00+00:00</published>
+        <updated>2015-02-11T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2015/iptables-notes/"/>
+        <id>https://yinheli.com/blog/2015/iptables-notes/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2015/iptables-notes/">&lt;p&gt;看看服务器都已经应用了哪些规则&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot;&gt;&lt;code&gt;&lt;span&gt;iptables -L -n
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -Z
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;清理掉全部的规则&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot;&gt;&lt;code&gt;&lt;span&gt;iptables -F
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -X
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;定义自己的规则&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;特别小心, 如果没有开放 ssh 端口就把 INPUT 的全部 DROP, shell 就掉了.
+确保有一个 ssh 22 端口是开放的.
+另一个保险是确保 iptables 不是启动运行, 这样还可以通过管理后台执行服务器重启来挽救. 否则.... 你的懂的&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;pre style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot;&gt;&lt;code&gt;&lt;span&gt;iptables -I INPUT 1 -m state --state RELATED,ESTABLISHED -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;# 各个链的规则
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -P INPUT DROP
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -P OUTPUT ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -P FORWARD ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;# 允许 ping
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p icmp -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;# 允许回环地址
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -i lo -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;# ssh 端口记录日志
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT 1 -p tcp --dport 22 -m limit --limit 3&#x2F;minute --limit-burst 8 -j LOG --log-prefix ssh-burst:
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;# 10s 内, 超过5次请求, 抛弃
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j DROP
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j LOG --log-prefix ssh-conn-max-time:
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --set
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j DROP
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j LOG --log-prefix app-conn-max-time:
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;# 限制某些端口的最大连接数
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --syn --dport 22 -m connlimit --connlimit-above 5  -j DROP
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --syn --dport 25000 -m connlimit --connlimit-above 10 -j DROP
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;# 开放的端口
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 25000 -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 20000 -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 9100 -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;# 这条规则用在INPUT链默没有DROP的情况, 作用与-P DROP相同, 当前面所有的规则都没匹配时, 自然落到这个 REJECT 上.
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;删除某条记录&lt;&#x2F;p&gt;
+&lt;p&gt;方法 1, 把配置的那个 &lt;code&gt;A&lt;&#x2F;code&gt; 换成 &lt;code&gt;D&lt;&#x2F;code&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;iptables -L -n --line-numbers&lt;&#x2F;code&gt; 使用 &lt;code&gt;--line-numbers&lt;&#x2F;code&gt; 打印行, 然后删除行
+例如: &lt;code&gt;iptables -D INPUT 2&lt;&#x2F;code&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;保存所有改动&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot;&gt;&lt;code&gt;&lt;span&gt;&#x2F;etc&#x2F;init.d&#x2F;iptables save
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;!--more--&gt;
+&lt;pre style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot;&gt;&lt;code&gt;&lt;span&gt;# 完整应用脚本, 用于快速初始化服务器 iptables
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -L -n
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -P INPUT ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -P OUTPUT ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -P FORWARD ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -F
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -X
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -Z
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p icmp -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -i lo -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT 1 -p tcp --dport 22 -m limit --limit 3&#x2F;minute --limit-burst 8 -j LOG --log-prefix ssh-burst:
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j DROP
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j LOG --log-prefix ssh-conn-max-times:
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --syn --dport 22 -m connlimit --connlimit-above 30  -j DROP
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -P INPUT DROP
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -P OUTPUT ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -P FORWARD ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --set
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j DROP
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j LOG --log-prefix app-conn-max-time:
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --syn --dport 25000 -m connlimit --connlimit-above 10 -j DROP
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 25000 -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --syn --dport 80 -m connlimit --connlimit-above 60 -j DROP
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --syn --dport 443 -m connlimit --connlimit-above 60 -j DROP
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 20000 -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -p tcp --dport 13307 -j ACCEPT
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;iptables -L -n
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;&#x2F;etc&#x2F;init.d&#x2F;iptables save
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>mysql 数据导出和导入</title>
+        <published>2015-02-10T00:00:00+00:00</published>
+        <updated>2015-02-10T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2015/mysql-import-export/"/>
+        <id>https://yinheli.com/blog/2015/mysql-import-export/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2015/mysql-import-export/">&lt;p&gt;导出&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;mysqldump -C -u root --opt --flush-logs --quick  dbname &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;| &lt;&#x2F;span&gt;&lt;span&gt;gzip &amp;gt; file.gz
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;pre style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot;&gt;&lt;code&gt;&lt;span&gt;-C 使用压缩协议
+&lt;&#x2F;span&gt;&lt;span&gt;-u 用户名
+&lt;&#x2F;span&gt;&lt;span&gt;--opt Same as --add-drop-table, --add-locks, --create-options, 等, 其实默认是开启的
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;导入&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;gunzip &amp;lt;  file.tgz &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;| &lt;&#x2F;span&gt;&lt;span&gt;mysql -u root -p &lt;&#x2F;span&gt;&lt;span style=&quot;color:#d69d85;&quot;&gt;&amp;quot;password&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt; dbname
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;一个全量备份脚本&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;#!&#x2F;bin&#x2F;sh
+&lt;&#x2F;span&gt;&lt;span&gt;PATH=&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;$&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#dcdcdc;&quot;&gt;PATH&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;:$&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#dcdcdc;&quot;&gt;HOME&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;&#x2F;bin:&#x2F;home&#x2F;mysql&#x2F;app&#x2F;mysql&#x2F;bin&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;export &lt;&#x2F;span&gt;&lt;span&gt;PATH
+&lt;&#x2F;span&gt;&lt;span&gt;cd `dirname $0`
+&lt;&#x2F;span&gt;&lt;span&gt;db=&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;hpos&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;dd=`date +%Y_%m%d_%H%M`
+&lt;&#x2F;span&gt;&lt;span&gt;sql_file=&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;db_backup_$&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#dcdcdc;&quot;&gt;dd&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;.sql.gz&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;ig=&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;&amp;#39;&amp;#39;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;# 忽略一些表
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;for&lt;&#x2F;span&gt;&lt;span&gt; i &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;in&lt;&#x2F;span&gt;&lt;span&gt; table_ignore_1 table_ignore_2
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;do
+&lt;&#x2F;span&gt;&lt;span&gt;   ig=&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;$&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#dcdcdc;&quot;&gt;ig&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;&amp;#39; --ignore-table=&amp;#39;$&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#dcdcdc;&quot;&gt;db&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#d69d85;&quot;&gt;.$&lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#282828;color:#dcdcdc;&quot;&gt;i&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;done
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#608b4e;&quot;&gt;#echo $ig
+&lt;&#x2F;span&gt;&lt;span&gt;mysqldump -u root --opt --flush-logs --quick $ig $db &lt;&#x2F;span&gt;&lt;span style=&quot;color:#569cd6;&quot;&gt;| &lt;&#x2F;span&gt;&lt;span&gt;gzip &amp;gt; $sql_file
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>centos 6 安装 vmware tools 无法启动的问题</title>
+        <published>2015-01-20T00:00:00+00:00</published>
+        <updated>2015-01-20T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://yinheli.com/blog/2015/install-vmware-centos6-issue/"/>
+        <id>https://yinheli.com/blog/2015/install-vmware-centos6-issue/</id>
+        
+        <content type="html" xml:base="https://yinheli.com/blog/2015/install-vmware-centos6-issue/">&lt;p&gt;错误信息&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot;&gt;&lt;code&gt;&lt;span&gt;vmware-tools-thinprint start&#x2F;running
+&lt;&#x2F;span&gt;&lt;span&gt;initctl: Job failed to start
+&lt;&#x2F;span&gt;&lt;span&gt;Unable to start services for VMware Tools
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;尝试安装 &lt;code&gt;fuse-libs&lt;&#x2F;code&gt;&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot;&gt;&lt;code&gt;&lt;span&gt;yum install fuse-libs
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;手工启动&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot;&gt;&lt;code&gt;&lt;span&gt;&#x2F;etc&#x2F;vmware-tools&#x2F;services.sh restart
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;pre style=&quot;background-color:#1e1e1e;color:#dcdcdc;&quot;&gt;&lt;code&gt;&lt;span&gt;Stopping VMware Tools services in the virtual machine:
+&lt;&#x2F;span&gt;&lt;span&gt;   Guest operating system daemon:                          [确定]
+&lt;&#x2F;span&gt;&lt;span&gt;   VMware User Agent (vmware-user):                        [确定]
+&lt;&#x2F;span&gt;&lt;span&gt;   Blocking file system:                                   [确定]
+&lt;&#x2F;span&gt;&lt;span&gt;   Unmounting HGFS shares:                                 [确定]
+&lt;&#x2F;span&gt;&lt;span&gt;   Guest filesystem driver:                                [确定]
+&lt;&#x2F;span&gt;&lt;span&gt;   VM communication interface socket family:               [确定]
+&lt;&#x2F;span&gt;&lt;span&gt;   VM communication interface:                             [确定]
+&lt;&#x2F;span&gt;&lt;span&gt;   Checking acpi hot plug                                  [确定]
+&lt;&#x2F;span&gt;&lt;span&gt;Starting VMware Tools services in the virtual machine:
+&lt;&#x2F;span&gt;&lt;span&gt;   Switching to guest configuration:                       [确定]
+&lt;&#x2F;span&gt;&lt;span&gt;   VMware Automatic Kmods:                                 [确定]
+&lt;&#x2F;span&gt;&lt;span&gt;   VM communication interface:                             [确定]
+&lt;&#x2F;span&gt;&lt;span&gt;   VM communication interface socket family:               [确定]
+&lt;&#x2F;span&gt;&lt;span&gt;   Guest filesystem driver:                                [确定]
+&lt;&#x2F;span&gt;&lt;span&gt;   Mounting HGFS shares:                                   [确定]
+&lt;&#x2F;span&gt;&lt;span&gt;   Blocking file system:                                   [确定]
+&lt;&#x2F;span&gt;&lt;span&gt;   Guest operating system daemon:                          [确定]
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;问题解决&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>

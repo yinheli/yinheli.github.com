@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Develop notes">
+    <title>Henry | nginx url decode issue</title>
+    <link rel="stylesheet" href="https://yinheli.com/style.css?h=5c5abba3a670f76f59be" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+    
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-5647601-2');
+    </script>
+    
+    
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://yinheli.com/atom.xml">
+    
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;yinheli.com">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>nginx url decode issue</h1>
+    
+    <p class="secondary">7 February, 2023</p>
+    
+    <div class="space"></div>
+    <p>公司的 bitbucket 已使用多年，最近计划升级，主要期望解决 nextjs 项目中文件名带有括号时 bitbucket 无法在 web 端查看代码的问题，发现升级完成后问题依旧，而相同版本，本地实验环境则没有发现这个问题，突然想到是不是中间代理层的问题，直连后 bitbucket (tomcat) 服务后发现果然没有这个问题，没想到困扰了这么久的问题居然是 nginx 导致的……</p>
+<p>尝试了多种方式，包括 rewrite 等，<code>proxy_pass</code> 依旧转发的内容会先做 url decode，这导致了后端server无法处理，最后本想用 lua 来试试，不过代理网关那边是 <code>apt</code> 直接安装的 nginx，改为 openresty 改动还有点大，遂试试 apt 安装 <a href="https://nginx.org/en/docs/njs/install.html"><code>nginx-module-njs</code></a>.</p>
+<p>修改 nginx.conf, 添加 <code>ngx_http_js_module</code> 加载</p>
+<pre data-lang="conf" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-conf "><code class="language-conf" data-lang="conf"><span>load_module </span><span style="color:#569cd6;">/</span><span>usr</span><span style="color:#569cd6;">/</span><span>lib</span><span style="color:#569cd6;">/</span><span>nginx</span><span style="color:#569cd6;">/</span><span>modules</span><span style="color:#569cd6;">/</span><span>ngx_http_js_module</span><span style="color:#569cd6;">.</span><span>so;
+</span></code></pre>
+<p>修改有关 bitbucket 段的反向代理配置，导入 git.js，用 auth_request 每次请求都执行 <code>/urlencode</code> 块 </p>
+<pre data-lang="conf" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-conf "><code class="language-conf" data-lang="conf"><span>js_import </span><span style="color:#569cd6;">/</span><span>etc</span><span style="color:#569cd6;">/</span><span>nginx</span><span style="color:#569cd6;">/</span><span>conf</span><span style="color:#569cd6;">.</span><span>d/git.js;
+</span><span>js_set $plain_uri </span><span style="color:#d69d85;">&#39;empty&#39;</span><span>;
+</span><span>
+</span><span style="color:#569cd6;">location ^~ /</span><span> {
+</span><span>  </span><span style="color:#608b4e;"># ...
+</span><span>  auth_request </span><span style="color:#569cd6;">/</span><span>urlencode;
+</span><span>  proxy_pass </span><span style="color:#b4cea8;">http://10.180.9.229:7990$plain_uri</span><span>;
+</span><span>}
+</span><span>
+</span><span style="color:#569cd6;">location /</span><span>urlencode {
+</span><span style="color:#569cd6;">  internal</span><span>;
+</span><span>  js_content git</span><span style="color:#569cd6;">.</span><span>urlencode;
+</span><span>}
+</span></code></pre>
+<p>其中 <code>git.js</code> 如下</p>
+<blockquote>
+<p>这里没有用 <code>replaceAll</code> 是因为在 <code>njs</code> 中并不支持</p>
+</blockquote>
+<pre data-lang="js" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-js "><code class="language-js" data-lang="js"><span style="color:#569cd6;">function </span><span>urlencode(r){
+</span><span>  </span><span style="color:#569cd6;">let </span><span>uri = r.variables.request_uri;
+</span><span>  r.variables.plain_uri = uri.replace(</span><span style="color:#d69d85;">/</span><span style="color:#e3bbab;">\[</span><span style="color:#d69d85;">/</span><span style="color:#569cd6;">g</span><span>, </span><span style="color:#d69d85;">&#39;%5B&#39;</span><span>).replace(</span><span style="color:#d69d85;">/</span><span style="color:#e3bbab;">\]</span><span style="color:#d69d85;">/</span><span style="color:#569cd6;">g</span><span>, </span><span style="color:#d69d85;">&#39;%5D&#39;</span><span>);
+</span><span>  r.return(</span><span style="color:#b5cea8;">200</span><span>);
+</span><span>}
+</span><span style="color:#569cd6;">export default </span><span>{urlencode};
+</span></code></pre>
+
+    
+    <div class="giscus"></div>
+    <script src="https://giscus.app/client.js"
+      data-repo="yinheli/yinheli.github.com"
+      data-repo-id="MDEwOlJlcG9zaXRvcnkzMTUzMzI5OQ=="
+      data-category="General"
+      data-category-id="DIC_kwDOAeEo884CUUss"
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="dark"
+      data-lang="zh-CN"
+      crossorigin="anonymous"
+      async>
+    </script>
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://yinheli.com/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://yinheli.com/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.body.classList;
+        const getSessionTheme = sessionStorage.getItem("theme");
+        if (getSessionTheme === "dark") {
+            cls.toggle("dark-mode", true);
+        } else if (getSessionTheme === "light") {
+            cls.toggle("dark-mode", false);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            cls.toggle("dark-mode", true);
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", true);
+            sessionStorage.setItem("theme", "dark");
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", false);
+            sessionStorage.setItem("theme", "light");
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>

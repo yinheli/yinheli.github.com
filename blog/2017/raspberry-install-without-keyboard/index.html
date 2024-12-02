@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="通过远程 WiFi 方式初始化树莓派">
+    <title>Henry | 远程初始化树莓派</title>
+    <link rel="stylesheet" href="https://yinheli.com/style.css?h=5c5abba3a670f76f59be" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+    
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-5647601-2');
+    </script>
+    
+    
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://yinheli.com/atom.xml">
+    
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;yinheli.com">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>远程初始化树莓派</h1>
+    
+    <p class="secondary">6 September, 2017</p>
+    
+    <div class="space"></div>
+    <p>没有键盘，显示器，只有 wifi 网络的情况下，启用 树莓派, 官方下载树莓派镜像，使用 Etcher 刷入 sd 卡</p>
+<p>在 sd 卡根目录创建空白 ssh 文件，标记启用 ssh</p>
+<p>找个 linux 服务器，挂载 sd 卡的 ext 分区，修改：<code>vi /etc/network/interfaces</code></p>
+<pre style="background-color:#1e1e1e;color:#dcdcdc;"><code><span>// ...
+</span><span>
+</span><span>// 添加
+</span><span>allow-hotplug wlan0
+</span><span>iface wlan0 inet dhcp
+</span><span>    wpa-ssid &quot;joy&quot;
+</span><span>    wpa-psk &quot;xxxx&quot; // 密码（明文）
+</span></code></pre>
+<p><code>vi /etc/wpa_supplicant/wpa_supplicant.conf</code></p>
+<pre style="background-color:#1e1e1e;color:#dcdcdc;"><code><span>country=US
+</span><span>ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+</span><span>update_config=1
+</span><span>
+</span><span>network={
+</span><span>    ssid=&quot;joy&quot;
+</span><span>    psk=&quot;xxxx&quot;
+</span><span>}
+</span></code></pre>
+<p>配置 wifi 重连</p>
+<pre style="background-color:#1e1e1e;color:#dcdcdc;"><code><span>cp /etc/ifplugd/action.d/ifupdown /etc/ifplugd/action.d/ifupdown.bak
+</span><span>cp /etc/wpa_supplicant/ifupdown.sh /etc/ifplugd/action.d/ifupdown
+</span></code></pre>
+
+    
+    <div class="giscus"></div>
+    <script src="https://giscus.app/client.js"
+      data-repo="yinheli/yinheli.github.com"
+      data-repo-id="MDEwOlJlcG9zaXRvcnkzMTUzMzI5OQ=="
+      data-category="General"
+      data-category-id="DIC_kwDOAeEo884CUUss"
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="dark"
+      data-lang="zh-CN"
+      crossorigin="anonymous"
+      async>
+    </script>
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://yinheli.com/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://yinheli.com/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.body.classList;
+        const getSessionTheme = sessionStorage.getItem("theme");
+        if (getSessionTheme === "dark") {
+            cls.toggle("dark-mode", true);
+        } else if (getSessionTheme === "light") {
+            cls.toggle("dark-mode", false);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            cls.toggle("dark-mode", true);
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", true);
+            sessionStorage.setItem("theme", "dark");
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", false);
+            sessionStorage.setItem("theme", "light");
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>

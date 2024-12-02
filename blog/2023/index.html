@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Develop notes">
+    <title>Henry | </title>
+    <link rel="stylesheet" href="https://yinheli.com/style.css?h=5c5abba3a670f76f59be" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+    
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-5647601-2');
+    </script>
+    
+    
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://yinheli.com/atom.xml">
+    
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;yinheli.com">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1></h1>
+    
+    
+    <h2>2023</h2>
+    <ul>
+        
+        <li><a href="https:&#x2F;&#x2F;yinheli.com&#x2F;blog&#x2F;2023&#x2F;postgresql-upgrade&#x2F;">postgresql 大版本升级</a></li>
+        
+        <li><a href="https:&#x2F;&#x2F;yinheli.com&#x2F;blog&#x2F;2023&#x2F;aliyun-k8s-ingress-xff-issue&#x2F;">阿里云 k8s ingress xff 问题</a></li>
+        
+        <li><a href="https:&#x2F;&#x2F;yinheli.com&#x2F;blog&#x2F;2023&#x2F;aliyun-k8s-reduce-costs&#x2F;">阿里云 k8s 节约成本记录</a></li>
+        
+        <li><a href="https:&#x2F;&#x2F;yinheli.com&#x2F;blog&#x2F;2023&#x2F;loki-local&#x2F;">本地运行 loki 查询</a></li>
+        
+        <li><a href="https:&#x2F;&#x2F;yinheli.com&#x2F;blog&#x2F;2023&#x2F;hello-world-hello-rust&#x2F;">hello world, hello rust</a></li>
+        
+        <li><a href="https:&#x2F;&#x2F;yinheli.com&#x2F;blog&#x2F;2023&#x2F;kaniko-build-cli&#x2F;">kaniko build cli</a></li>
+        
+        <li><a href="https:&#x2F;&#x2F;yinheli.com&#x2F;blog&#x2F;2023&#x2F;nginx-url-decode-issue&#x2F;">nginx url decode issue</a></li>
+        
+        <li><a href="https:&#x2F;&#x2F;yinheli.com&#x2F;blog&#x2F;2023&#x2F;k8s-node-shell&#x2F;">kubernetes node shell plugin</a></li>
+        
+        <li><a href="https:&#x2F;&#x2F;yinheli.com&#x2F;blog&#x2F;2023&#x2F;pytorch-mirror&#x2F;">pytorch 镜像</a></li>
+        
+    </ul>
+    
+    <h2>2022</h2>
+    <ul>
+        
+        <li><a href="https:&#x2F;&#x2F;yinheli.com&#x2F;blog&#x2F;2023&#x2F;learn-stable-diffusion&#x2F;">stable diffusion</a></li>
+        
+    </ul>
+    
+    
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://yinheli.com/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://yinheli.com/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.body.classList;
+        const getSessionTheme = sessionStorage.getItem("theme");
+        if (getSessionTheme === "dark") {
+            cls.toggle("dark-mode", true);
+        } else if (getSessionTheme === "light") {
+            cls.toggle("dark-mode", false);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            cls.toggle("dark-mode", true);
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", true);
+            sessionStorage.setItem("theme", "dark");
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", false);
+            sessionStorage.setItem("theme", "light");
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>

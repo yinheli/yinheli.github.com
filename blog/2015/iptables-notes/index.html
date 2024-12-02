@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Develop notes">
+    <title>Henry | iptables 笔记</title>
+    <link rel="stylesheet" href="https://yinheli.com/style.css?h=5c5abba3a670f76f59be" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+    
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-5647601-2');
+    </script>
+    
+    
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://yinheli.com/atom.xml">
+    
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;yinheli.com">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>iptables 笔记</h1>
+    
+    <p class="secondary">11 February, 2015</p>
+    
+    <div class="space"></div>
+    <p>看看服务器都已经应用了哪些规则</p>
+<pre style="background-color:#1e1e1e;color:#dcdcdc;"><code><span>iptables -L -n
+</span><span>iptables -Z
+</span></code></pre>
+<p>清理掉全部的规则</p>
+<pre style="background-color:#1e1e1e;color:#dcdcdc;"><code><span>iptables -F
+</span><span>iptables -X
+</span></code></pre>
+<p>定义自己的规则</p>
+<blockquote>
+<p>特别小心, 如果没有开放 ssh 端口就把 INPUT 的全部 DROP, shell 就掉了.
+确保有一个 ssh 22 端口是开放的.
+另一个保险是确保 iptables 不是启动运行, 这样还可以通过管理后台执行服务器重启来挽救. 否则.... 你的懂的</p>
+</blockquote>
+<pre style="background-color:#1e1e1e;color:#dcdcdc;"><code><span>iptables -I INPUT 1 -m state --state RELATED,ESTABLISHED -j ACCEPT
+</span><span>
+</span><span># 各个链的规则
+</span><span>iptables -P INPUT DROP
+</span><span>iptables -P OUTPUT ACCEPT
+</span><span>iptables -P FORWARD ACCEPT
+</span><span>
+</span><span># 允许 ping
+</span><span>iptables -A INPUT -p icmp -j ACCEPT
+</span><span># 允许回环地址
+</span><span>iptables -A INPUT -i lo -j ACCEPT
+</span><span>
+</span><span># ssh 端口记录日志
+</span><span>iptables -A INPUT 1 -p tcp --dport 22 -m limit --limit 3/minute --limit-burst 8 -j LOG --log-prefix ssh-burst:
+</span><span>
+</span><span># 10s 内, 超过5次请求, 抛弃
+</span><span>iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
+</span><span>iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j DROP
+</span><span>iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j LOG --log-prefix ssh-conn-max-time:
+</span><span>
+</span><span>iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --set
+</span><span>iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j DROP
+</span><span>iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j LOG --log-prefix app-conn-max-time:
+</span><span>
+</span><span># 限制某些端口的最大连接数
+</span><span>iptables -A INPUT -p tcp --syn --dport 22 -m connlimit --connlimit-above 5  -j DROP
+</span><span>iptables -A INPUT -p tcp --syn --dport 25000 -m connlimit --connlimit-above 10 -j DROP
+</span><span>
+</span><span># 开放的端口
+</span><span>iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+</span><span>iptables -A INPUT -p tcp --dport 25000 -j ACCEPT
+</span><span>iptables -A INPUT -p tcp --dport 20000 -j ACCEPT
+</span><span>iptables -A INPUT -p tcp --dport 9100 -j ACCEPT
+</span><span>
+</span><span># 这条规则用在INPUT链默没有DROP的情况, 作用与-P DROP相同, 当前面所有的规则都没匹配时, 自然落到这个 REJECT 上.
+</span><span>iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
+</span><span>iptables -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+</span></code></pre>
+<p>删除某条记录</p>
+<p>方法 1, 把配置的那个 <code>A</code> 换成 <code>D</code></p>
+<p><code>iptables -L -n --line-numbers</code> 使用 <code>--line-numbers</code> 打印行, 然后删除行
+例如: <code>iptables -D INPUT 2</code></p>
+<p>保存所有改动</p>
+<pre style="background-color:#1e1e1e;color:#dcdcdc;"><code><span>/etc/init.d/iptables save
+</span></code></pre>
+<!--more-->
+<pre style="background-color:#1e1e1e;color:#dcdcdc;"><code><span># 完整应用脚本, 用于快速初始化服务器 iptables
+</span><span>
+</span><span>iptables -L -n
+</span><span>
+</span><span>iptables -P INPUT ACCEPT
+</span><span>iptables -P OUTPUT ACCEPT
+</span><span>iptables -P FORWARD ACCEPT
+</span><span>
+</span><span>iptables -F
+</span><span>iptables -X
+</span><span>iptables -Z
+</span><span>
+</span><span>iptables -A INPUT -p icmp -j ACCEPT
+</span><span>iptables -A INPUT -i lo -j ACCEPT
+</span><span>iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+</span><span>
+</span><span>iptables -A INPUT 1 -p tcp --dport 22 -m limit --limit 3/minute --limit-burst 8 -j LOG --log-prefix ssh-burst:
+</span><span>
+</span><span>iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
+</span><span>iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j DROP
+</span><span>iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 10 --hitcount 5 -j LOG --log-prefix ssh-conn-max-times:
+</span><span>
+</span><span>iptables -A INPUT -p tcp --syn --dport 22 -m connlimit --connlimit-above 30  -j DROP
+</span><span>iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+</span><span>
+</span><span>iptables -P INPUT DROP
+</span><span>iptables -P OUTPUT ACCEPT
+</span><span>iptables -P FORWARD ACCEPT
+</span><span>
+</span><span>
+</span><span>iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --set
+</span><span>iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j DROP
+</span><span>iptables -A INPUT -p tcp --dport 25000 -m state --state NEW -m recent --update --seconds 10 --hitcount 10 -j LOG --log-prefix app-conn-max-time:
+</span><span>
+</span><span>iptables -A INPUT -p tcp --syn --dport 25000 -m connlimit --connlimit-above 10 -j DROP
+</span><span>iptables -A INPUT -p tcp --dport 25000 -j ACCEPT
+</span><span>
+</span><span>iptables -A INPUT -p tcp --syn --dport 80 -m connlimit --connlimit-above 60 -j DROP
+</span><span>iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+</span><span>
+</span><span>iptables -A INPUT -p tcp --syn --dport 443 -m connlimit --connlimit-above 60 -j DROP
+</span><span>iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+</span><span>
+</span><span>iptables -A INPUT -p tcp --dport 20000 -j ACCEPT
+</span><span>iptables -A INPUT -p tcp --dport 13307 -j ACCEPT
+</span><span>
+</span><span>iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
+</span><span>iptables -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+</span><span>
+</span><span>iptables -L -n
+</span><span>
+</span><span>/etc/init.d/iptables save
+</span></code></pre>
+
+    
+    <div class="giscus"></div>
+    <script src="https://giscus.app/client.js"
+      data-repo="yinheli/yinheli.github.com"
+      data-repo-id="MDEwOlJlcG9zaXRvcnkzMTUzMzI5OQ=="
+      data-category="General"
+      data-category-id="DIC_kwDOAeEo884CUUss"
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="dark"
+      data-lang="zh-CN"
+      crossorigin="anonymous"
+      async>
+    </script>
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://yinheli.com/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://yinheli.com/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.body.classList;
+        const getSessionTheme = sessionStorage.getItem("theme");
+        if (getSessionTheme === "dark") {
+            cls.toggle("dark-mode", true);
+        } else if (getSessionTheme === "light") {
+            cls.toggle("dark-mode", false);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            cls.toggle("dark-mode", true);
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", true);
+            sessionStorage.setItem("theme", "dark");
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", false);
+            sessionStorage.setItem("theme", "light");
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>

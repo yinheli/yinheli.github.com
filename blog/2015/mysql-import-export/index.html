@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Develop notes">
+    <title>Henry | mysql 数据导出和导入</title>
+    <link rel="stylesheet" href="https://yinheli.com/style.css?h=5c5abba3a670f76f59be" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+    
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-5647601-2');
+    </script>
+    
+    
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://yinheli.com/atom.xml">
+    
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;yinheli.com">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>mysql 数据导出和导入</h1>
+    
+    <p class="secondary">10 February, 2015</p>
+    
+    <div class="space"></div>
+    <p>导出</p>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span>mysqldump -C -u root --opt --flush-logs --quick  dbname </span><span style="color:#569cd6;">| </span><span>gzip &gt; file.gz
+</span></code></pre>
+<pre style="background-color:#1e1e1e;color:#dcdcdc;"><code><span>-C 使用压缩协议
+</span><span>-u 用户名
+</span><span>--opt Same as --add-drop-table, --add-locks, --create-options, 等, 其实默认是开启的
+</span></code></pre>
+<p>导入</p>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span>gunzip &lt;  file.tgz </span><span style="color:#569cd6;">| </span><span>mysql -u root -p </span><span style="color:#d69d85;">&quot;password&quot;</span><span> dbname
+</span></code></pre>
+<p>一个全量备份脚本</p>
+<pre data-lang="bash" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#608b4e;">#!/bin/sh
+</span><span>PATH=</span><span style="background-color:#282828;color:#d69d85;">$</span><span style="background-color:#282828;color:#dcdcdc;">PATH</span><span style="background-color:#282828;color:#d69d85;">:$</span><span style="background-color:#282828;color:#dcdcdc;">HOME</span><span style="background-color:#282828;color:#d69d85;">/bin:/home/mysql/app/mysql/bin</span><span>
+</span><span style="color:#569cd6;">export </span><span>PATH
+</span><span>cd `dirname $0`
+</span><span>db=</span><span style="background-color:#282828;color:#d69d85;">hpos</span><span>
+</span><span>dd=`date +%Y_%m%d_%H%M`
+</span><span>sql_file=</span><span style="background-color:#282828;color:#d69d85;">db_backup_$</span><span style="background-color:#282828;color:#dcdcdc;">dd</span><span style="background-color:#282828;color:#d69d85;">.sql.gz</span><span>
+</span><span>ig=</span><span style="background-color:#282828;color:#d69d85;">&#39;&#39;</span><span>
+</span><span>
+</span><span style="color:#608b4e;"># 忽略一些表
+</span><span style="color:#569cd6;">for</span><span> i </span><span style="color:#569cd6;">in</span><span> table_ignore_1 table_ignore_2
+</span><span style="color:#569cd6;">do
+</span><span>   ig=</span><span style="background-color:#282828;color:#d69d85;">$</span><span style="background-color:#282828;color:#dcdcdc;">ig</span><span style="background-color:#282828;color:#d69d85;">&#39; --ignore-table=&#39;$</span><span style="background-color:#282828;color:#dcdcdc;">db</span><span style="background-color:#282828;color:#d69d85;">.$</span><span style="background-color:#282828;color:#dcdcdc;">i</span><span>
+</span><span style="color:#569cd6;">done
+</span><span>
+</span><span style="color:#608b4e;">#echo $ig
+</span><span>mysqldump -u root --opt --flush-logs --quick $ig $db </span><span style="color:#569cd6;">| </span><span>gzip &gt; $sql_file
+</span></code></pre>
+
+    
+    <div class="giscus"></div>
+    <script src="https://giscus.app/client.js"
+      data-repo="yinheli/yinheli.github.com"
+      data-repo-id="MDEwOlJlcG9zaXRvcnkzMTUzMzI5OQ=="
+      data-category="General"
+      data-category-id="DIC_kwDOAeEo884CUUss"
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="dark"
+      data-lang="zh-CN"
+      crossorigin="anonymous"
+      async>
+    </script>
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://yinheli.com/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://yinheli.com/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.body.classList;
+        const getSessionTheme = sessionStorage.getItem("theme");
+        if (getSessionTheme === "dark") {
+            cls.toggle("dark-mode", true);
+        } else if (getSessionTheme === "light") {
+            cls.toggle("dark-mode", false);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            cls.toggle("dark-mode", true);
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", true);
+            sessionStorage.setItem("theme", "dark");
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", false);
+            sessionStorage.setItem("theme", "light");
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>

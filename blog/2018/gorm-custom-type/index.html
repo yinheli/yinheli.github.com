@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="GORM 自定义数据类型">
+    <title>Henry | GORM 自定义数据类型的处理</title>
+    <link rel="stylesheet" href="https://yinheli.com/style.css?h=5c5abba3a670f76f59be" />
+    <link rel="apple-touch-icon" href="/img/fav.png" />
+    <link rel="icon" type="image/png" href="/img/fav@1x.png" />
+    <link rel="shortcut icon" href="/img/fav.png" />
+    
+    <style>
+      .giscus {
+        margin-top: 50px;
+      }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-5647601-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-5647601-2');
+    </script>
+    
+    
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://yinheli.com/atom.xml">
+    
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;yinheli.com">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>GORM 自定义数据类型的处理</h1>
+    
+    <p class="secondary">17 May, 2018</p>
+    
+    <div class="space"></div>
+    <p>如果有自定的数据类型，关键是实现 sql 的序列和反序列化方法，即: <code>driver.Valuer</code> <code>sql.Scanner</code> 接口。</p>
+<p>例如有如下数据结构</p>
+<pre data-lang="go" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-go "><code class="language-go" data-lang="go"><span style="color:#569cd6;">type </span><span style="color:#4ec9b0;">StringArray </span><span>[]string
+</span><span>
+</span><span style="color:#569cd6;">type </span><span style="color:#4ec9b0;">RecArticle </span><span style="color:#569cd6;">struct </span><span>{
+</span><span>	Id     uint64 </span><span style="color:#d69d85;">`gorm:&quot;column:id&quot; json:&quot;Id,string&quot;`
+</span><span>	Tags   </span><span style="color:#569cd6;">StringArray  </span><span style="color:#d69d85;">`gorm:&quot;column:tags&quot; json:&quot;tags&quot;`
+</span><span>	Cates  </span><span style="color:#569cd6;">StringArray  </span><span style="color:#d69d85;">`gorm:&quot;column:cates&quot; json:&quot;cates&quot;`
+</span><span>}
+</span></code></pre>
+<p>实现上面的接口</p>
+<pre data-lang="go" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-go "><code class="language-go" data-lang="go"><span style="color:#569cd6;">func </span><span>(t </span><span style="color:#569cd6;">StringArray</span><span>) Value() (driver.</span><span style="color:#569cd6;">Value</span><span>, error) {
+</span><span>	b, _ := json.Marshal(t)
+</span><span>	</span><span style="color:#569cd6;">return </span><span>string(b), </span><span style="color:#569cd6;">nil
+</span><span>}
+</span><span>
+</span><span style="color:#569cd6;">func </span><span>(t </span><span style="color:#569cd6;">*StringArray</span><span>) Scan(src </span><span style="color:#569cd6;">interface</span><span>{}) error {
+</span><span>	</span><span style="color:#569cd6;">if </span><span>src </span><span style="color:#569cd6;">!= nil </span><span>{
+</span><span>		</span><span style="color:#569cd6;">var </span><span>v []string
+</span><span>		json.Unmarshal(src.([]byte), </span><span style="color:#569cd6;">&amp;</span><span>v)
+</span><span>		</span><span style="color:#569cd6;">*</span><span>t = v
+</span><span>	}
+</span><span>	</span><span style="color:#569cd6;">return nil
+</span><span>}
+</span></code></pre>
+<p>如果对时间戳，json 都需要特定的处理</p>
+<p>add callbacks</p>
+<pre data-lang="go" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-go "><code class="language-go" data-lang="go"><span style="color:#608b4e;">// ... init gorm
+</span><span>DB, err = gorm.Open(</span><span style="color:#d69d85;">&quot;mysql&quot;</span><span>, </span><span style="color:#d69d85;">&quot;DSN&quot;</span><span>)
+</span><span style="color:#608b4e;">// ... handle error
+</span><span>
+</span><span style="color:#608b4e;">// add callbacks refer: http://gorm.io/docs/write_plugins.html
+</span><span>DB.Callback().Create().After(</span><span style="color:#d69d85;">&quot;gorm:update_time_stamp&quot;</span><span>).Register(</span><span style="color:#d69d85;">&quot;mark_timestamp_normal&quot;</span><span>, markTimestampNormal)
+</span><span>DB.Callback().Update().After(</span><span style="color:#d69d85;">&quot;gorm:update_time_stamp&quot;</span><span>).Register(</span><span style="color:#d69d85;">&quot;mark_timestamp_normal&quot;</span><span>, markTimestampNormal)
+</span><span style="color:#608b4e;">// ....
+</span><span>
+</span><span style="color:#569cd6;">func </span><span>markTimestampNormal(scope </span><span style="color:#569cd6;">*</span><span>gorm.</span><span style="color:#569cd6;">Scope</span><span>) {
+</span><span>	</span><span style="color:#569cd6;">if </span><span>createdAtField, ok := scope.FieldByName(</span><span style="color:#d69d85;">&quot;CreatedAt&quot;</span><span>); ok {
+</span><span>		createdAtField.IsNormal = </span><span style="color:#569cd6;">true
+</span><span>	}
+</span><span>
+</span><span>	</span><span style="color:#569cd6;">if </span><span>updatedAtField, ok := scope.FieldByName(</span><span style="color:#d69d85;">&quot;UpdatedAt&quot;</span><span>); ok {
+</span><span>		updatedAtField.IsNormal = </span><span style="color:#569cd6;">true
+</span><span>	}
+</span><span>}
+</span></code></pre>
+<p>alias</p>
+<pre data-lang="go" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-go "><code class="language-go" data-lang="go"><span style="color:#608b4e;">// alias
+</span><span style="color:#569cd6;">type </span><span style="color:#4ec9b0;">Timestamp </span><span>time.</span><span style="color:#569cd6;">Time
+</span><span>
+</span><span style="color:#608b4e;">// UnmarshalParam echo api @see https://echo.labstack.com/guide/request
+</span><span style="color:#569cd6;">func </span><span>(t </span><span style="color:#569cd6;">*Timestamp</span><span>) UnmarshalParam(src string) error {
+</span><span>	</span><span style="color:#569cd6;">if </span><span>src </span><span style="color:#569cd6;">!= </span><span style="color:#d69d85;">&quot;&quot; </span><span>{
+</span><span>		m, err := strconv.ParseInt(src, </span><span style="color:#b5cea8;">10</span><span>, </span><span style="color:#b5cea8;">64</span><span>)
+</span><span>		</span><span style="color:#569cd6;">if </span><span>err </span><span style="color:#569cd6;">!= nil </span><span>{
+</span><span>			</span><span style="color:#569cd6;">return </span><span>err
+</span><span>		}
+</span><span>
+</span><span>		ts := time.Unix(</span><span style="color:#b5cea8;">0</span><span>, m</span><span style="color:#569cd6;">*</span><span>int64(time.Millisecond))
+</span><span>		</span><span style="color:#569cd6;">*</span><span>t = Timestamp(ts)
+</span><span>	}
+</span><span>	</span><span style="color:#569cd6;">return nil
+</span><span>}
+</span><span>
+</span><span style="color:#608b4e;">// MarshalJSON echo api json response
+</span><span style="color:#569cd6;">func </span><span>(t </span><span style="color:#569cd6;">*Timestamp</span><span>) MarshalJSON() ([]byte, error) {
+</span><span>	</span><span style="color:#569cd6;">if </span><span>t </span><span style="color:#569cd6;">!= nil </span><span>{
+</span><span>		ts := time.Time(</span><span style="color:#569cd6;">*</span><span>t)
+</span><span>		</span><span style="color:#569cd6;">return </span><span>[]byte(fmt.Sprintf(</span><span style="color:#d69d85;">`&quot;</span><span style="color:#b4cea8;">%d</span><span style="color:#d69d85;">&quot;`</span><span>, ts.UnixNano()</span><span style="color:#569cd6;">/</span><span>int64(time.Millisecond))), </span><span style="color:#569cd6;">nil
+</span><span>	}
+</span><span>	</span><span style="color:#569cd6;">return nil</span><span>, </span><span style="color:#569cd6;">nil
+</span><span>}
+</span><span>
+</span><span style="color:#608b4e;">// for sql log, print readable format
+</span><span style="color:#569cd6;">func </span><span>(t </span><span style="color:#569cd6;">Timestamp</span><span>) String() string {
+</span><span>	ts := time.Time(t)
+</span><span>	</span><span style="color:#569cd6;">return </span><span>ts.Format(time.RFC3339)
+</span><span>}
+</span><span>
+</span><span style="color:#608b4e;">// insert into database conversion
+</span><span style="color:#569cd6;">func </span><span>(t </span><span style="color:#569cd6;">Timestamp</span><span>) Value() (driver.</span><span style="color:#569cd6;">Value</span><span>, error) {
+</span><span>	</span><span style="color:#569cd6;">return </span><span>time.Time(t), </span><span style="color:#569cd6;">nil
+</span><span>}
+</span><span>
+</span><span style="color:#608b4e;">// read from database conversion
+</span><span style="color:#569cd6;">func </span><span>(t </span><span style="color:#569cd6;">*Timestamp</span><span>) Scan(src </span><span style="color:#569cd6;">interface</span><span>{}) error {
+</span><span>	</span><span style="color:#569cd6;">if </span><span>val, ok := src.(time.</span><span style="color:#569cd6;">Time</span><span>); ok {
+</span><span>		</span><span style="color:#569cd6;">*</span><span>t = Timestamp(val)
+</span><span>	}
+</span><span>	</span><span style="color:#569cd6;">return nil
+</span><span>}
+</span></code></pre>
+<p>model</p>
+<pre data-lang="go" style="background-color:#1e1e1e;color:#dcdcdc;" class="language-go "><code class="language-go" data-lang="go"><span style="color:#569cd6;">type </span><span style="color:#4ec9b0;">App </span><span style="color:#569cd6;">struct </span><span>{
+</span><span>	Id        uint32     </span><span style="color:#d69d85;">`json:&quot;id,string&quot;`
+</span><span>	AppKey    string     </span><span style="color:#d69d85;">`json:&quot;appKey&quot; validate:&quot;required&quot;`
+</span><span>	AppSecret string     </span><span style="color:#d69d85;">`json:&quot;appSecret&quot; validate:&quot;required&quot;`
+</span><span>	AppName   string     </span><span style="color:#d69d85;">`json:&quot;appName&quot; validate:&quot;required&quot;`
+</span><span>	CreatedAt </span><span style="color:#569cd6;">Timestamp  </span><span style="color:#d69d85;">`json:&quot;createdAt&quot;`
+</span><span>	UpdatedAt </span><span style="color:#569cd6;">*Timestamp </span><span style="color:#d69d85;">`json:&quot;updatedAt&quot;`
+</span><span>}
+</span></code></pre>
+<p>Refer:</p>
+<ul>
+<li>http://gorm.io/docs/write_plugins.html</li>
+<li>https://github.com/jinzhu/gorm/issues/1236#issuecomment-389633747</li>
+<li>https://echo.labstack.com/guide/request</li>
+</ul>
+
+    
+    <div class="giscus"></div>
+    <script src="https://giscus.app/client.js"
+      data-repo="yinheli/yinheli.github.com"
+      data-repo-id="MDEwOlJlcG9zaXRvcnkzMTUzMzI5OQ=="
+      data-category="General"
+      data-category-id="DIC_kwDOAeEo884CUUss"
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="dark"
+      data-lang="zh-CN"
+      crossorigin="anonymous"
+      async>
+    </script>
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://yinheli.com/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://yinheli.com/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.body.classList;
+        const getSessionTheme = sessionStorage.getItem("theme");
+        if (getSessionTheme === "dark") {
+            cls.toggle("dark-mode", true);
+        } else if (getSessionTheme === "light") {
+            cls.toggle("dark-mode", false);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            cls.toggle("dark-mode", true);
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", true);
+            sessionStorage.setItem("theme", "dark");
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            cls.toggle("dark-mode", false);
+            sessionStorage.setItem("theme", "light");
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>
